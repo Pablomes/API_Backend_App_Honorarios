@@ -1,0 +1,37 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UserSecretsId>d2349b32-2edd-46fe-841c-5a84e01eda3c</UserSecretsId>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Azure.Data.Tables" Version="12.11.0" />
+    <PackageReference Include="Azure.Storage.Blobs" Version="12.27.0" />
+    <PackageReference Include="Azure.Storage.Files.Shares" Version="12.25.0" />
+    <PackageReference Include="Azure.Storage.Queues" Version="12.25.0" />
+    <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.7" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="10.0.7" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.InMemory" Version="10.0.7" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.7" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="10.0.7" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="10.0.7">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="Microsoft.Extensions.Azure" Version="1.13.1" />
+    <PackageReference Include="Microsoft.OpenApi" Version="2.3.9" />
+    <PackageReference Include="PDFsharp" Version="6.2.4" />
+    <PackageReference Include="SQLitePCLRaw.lib.e_sqlite3" Version="3.53.3" />
+
+	  <EmbeddedResource Include="Materials/Fonts/Montserrat-Bold.ttf" />
+	  <EmbeddedResource Include="Materials/Fonts/Montserrat-BoldItalic.ttf" />
+	  <EmbeddedResource Include="Materials/Fonts/Montserrat-Italic.ttf" />
+	  <EmbeddedResource Include="Materials/Fonts/Montserrat-Regular.ttf" />
+
+	  <EmbeddedResource Include="Materials/Images/LogoIVEPDF.png" />
+  </ItemGroup>
+
+</Project>
