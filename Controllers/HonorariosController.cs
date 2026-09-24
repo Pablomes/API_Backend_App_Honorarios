@@ -12,19 +12,56 @@ namespace API_Backend_App_Industrializacion.Controllers
 {
     [ApiController]
     [Route("honorarios")]
-    public class CalculationController : ControllerBase
+    public class HonorariosController : ControllerBase
     {
 
-        private readonly CalculationService service;
-        private readonly ILogger<CalculationController> logger;
+        private readonly CalculationService calcService;
+        private readonly FetchService fetchService;
+        private readonly ILogger<HonorariosController> logger;
 
-        public CalculationController(
-            CalculationService service,
-            ILogger<CalculationController> logger)
+        public HonorariosController(
+            CalculationService calcService, FetchService fetchService,
+            ILogger<HonorariosController> logger)
         {
-            this.service = service;
+            this.calcService = calcService;
+            this.fetchService = fetchService;
             this.logger = logger;
         }
+
+        [HttpGet("docs/{type}")]
+        public async Task<IActionResult> GetDocs(string type)
+        {
+            switch (type)
+            {
+                case "edif":
+                    return Ok(await fetchService.GetEdificationDocs());
+                case "obci":
+                    return Ok(await fetchService.GetCivilWorksDocs());
+                case "urba":
+                    return Ok(await fetchService.GetUrbanisationDocs());
+                default:
+                    return BadRequest("Invalid document type.");
+            }
+        }
+
+        [HttpGet("projects/{type}")]
+        public async Task<IActionResult> GetProjects(string type)
+        {
+            switch (type)
+            {
+                case "edif":
+                    return Ok(await fetchService.GetEdificationProjects());
+                case "obci":
+                    return Ok(await fetchService.GetCivilWorksProjects());
+                case "urba":
+                    return Ok(await fetchService.GetUrbanisationProjects());
+                default:
+                    return BadRequest("Invalid document type.");
+            }
+        }
+
+        [HttpGet("")]
+
 
         [HttpPost("calculate")]
         public async Task<ActionResult<HonorariosCalculationResponse>> calculateValues([FromBody] HonorariosCalculationRequest request)
@@ -39,17 +76,17 @@ namespace API_Backend_App_Industrializacion.Controllers
                 {
                     case EdificationCalculationRequest edif:
                         logger.LogInformation("Calculation 'honorarios' value for EdificationCalculationRequest.");
-                        response = await service.CalculateAsync(edif);
+                        response = await calcService.CalculateAsync(edif);
                         break;
 
                     case CivilWorksCalculationRequest obci:
                         logger.LogInformation("Calculation 'honorarios' value for CivilWorksCalculationRequest.");
-                        response = await service.CalculateAsync(obci);
+                        response = await calcService.CalculateAsync(obci);
                         break;
 
                     case UrbanisationCalculationRequest urba:
                         logger.LogInformation("Calculation 'honorarios' value for UrbanisationCalculationRequest.");
-                        response = await service.CalculateAsync(urba);
+                        response = await calcService.CalculateAsync(urba);
                         break;
                 }
 

@@ -8,27 +8,22 @@ namespace API_Backend_App_Honorarios.ExpressionInterpreting
     {
         private Dictionary<string, double> variables = new();
         private HashSet<string> resolving = new();
-        
+
         private Lexer lexer = new();
         private Parser parser = new();
         private Evaluator evaluator;
 
-        private EdificacionCalcDataDb edificacionCalcData;
-        private ObraCivilCalcDataDb obraCivilCalcData;
-        private UrbanizacionCalcDataDb urbanizacionCalcData;
+        private readonly HonorariosDb honorariosDb;
 
-        private CalculationMode calcMode = CalculationMode.EDIFICACION;
+        private CalculationMode calcMode = CalculationMode.ObraCivil;
 
-        public Interpreter(EdificacionCalcDataDb ecd, ObraCivilCalcDataDb occd, UrbanizacionCalcDataDb ucd)
+        public Interpreter(HonorariosDb db)
         {
-            edificacionCalcData = ecd;
-            obraCivilCalcData = occd;
-            urbanizacionCalcData = ucd;
-
+            this.honorariosDb = db;
             evaluator = new Evaluator(this);
         }
 
-        public Interpreter(EdificacionCalcDataDb ecd, ObraCivilCalcDataDb occd, UrbanizacionCalcDataDb ucd, params (string name, double value)[] vars) : this(ecd, occd, ucd)
+        public Interpreter(HonorariosDb db, params (string name, double value)[] vars) : this(db)
         {
             this.AddVariables(vars);
         }
@@ -60,7 +55,7 @@ namespace API_Backend_App_Honorarios.ExpressionInterpreting
         {
             switch (this.calcMode)
             {
-                case CalculationMode.EDIFICACION:
+                case CalculationMode.ObraCivil:
                     return await GetEdificacionValue(variableName);
                 case CalculationMode.OBRA_CIVIL:
                     return await GetObraCivilValue(variableName);
@@ -85,7 +80,7 @@ namespace API_Backend_App_Honorarios.ExpressionInterpreting
 
             try
             {
-                EdificacionCalcData? calcData = await edificacionCalcData.EdificacionCalcDatas.FindAsync(variableName) ?? throw new KeyNotFoundException($"La variable {variableName} no se encuentra ni inicializada ni en la BBDD.");
+                EdificacionCalcData? calcData = await honorariosDb.EdificacionCalcDatas.FindAsync(variableName) ?? throw new KeyNotFoundException($"La variable {variableName} no se encuentra ni inicializada ni en la BBDD.");
 
                 double result = await this.Interpret(calcData.Formula);
 
@@ -109,7 +104,7 @@ namespace API_Backend_App_Honorarios.ExpressionInterpreting
 
             try
             {
-                ObraCivilCalcData? calcData = await obraCivilCalcData.ObraCivilCalcDatas.FindAsync(variableName) ?? throw new KeyNotFoundException($"La variable {variableName} no se encuentra ni inicializada ni en la BBDD.");
+                ObraCivilCalcData? calcData = await honorariosDb.ObraCivilCalcDatas.FindAsync(variableName) ?? throw new KeyNotFoundException($"La variable {variableName} no se encuentra ni inicializada ni en la BBDD.");
 
                 double result = await this.Interpret(calcData.Formula);
 
@@ -134,7 +129,7 @@ namespace API_Backend_App_Honorarios.ExpressionInterpreting
 
             try
             {
-                UrbanizacionCalcData? calcData = await urbanizacionCalcData.UrbanizacionCalcDatas.FindAsync(variableName) ?? throw new KeyNotFoundException($"La variable {variableName} no se encuentra ni inicializada ni en la BBDD.");
+                UrbanizacionCalcData? calcData = await honorariosDb.UrbanizacionCalcDatas.FindAsync(variableName) ?? throw new KeyNotFoundException($"La variable {variableName} no se encuentra ni inicializada ni en la BBDD.");
 
                 double result = await this.Interpret(calcData.Formula);
 
@@ -151,7 +146,7 @@ namespace API_Backend_App_Honorarios.ExpressionInterpreting
         private async Task<double> Interpret(string expression)
         {
             try
-            {         
+            {
                 List<ExpressionToken> tokens = lexer.Tokenise(expression);
 
                 ExpressionNode ast = parser.Parse(tokens);
@@ -159,7 +154,8 @@ namespace API_Backend_App_Honorarios.ExpressionInterpreting
                 double result = await evaluator.Evaluate(ast);
 
                 return result;
-            } catch (Exception e)
+            }
+            catch (Exception e)
             {
                 Console.WriteLine(e.Message);
             }

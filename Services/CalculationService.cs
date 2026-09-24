@@ -9,43 +9,28 @@ namespace API_Backend_App_Honorarios.Services
     {
         private Interpreter interpreter;
 
-        protected readonly EdificacionCalcDataDb edificacionCalcDataDb;
-        protected readonly EdificacionPlantasCalcDataDb edificacionPlantasCalcDataDb;
-        private Dictionary<int, double> coefsReduccionPlantas;
+        protected readonly HonorariosDb honorariosDb;
 
-        protected readonly CoefHObraCivilCalcDataDb coefHObraCivilCalcDataDb;
-        protected readonly CoefsObraCivilCalcDataDb coefsObraCivilCalcDataDb;
-        protected readonly ObraCivilCalcDataDb obraCivilCalcDataDb;
-        protected readonly PEMRObraCivilCalcDataDb pemrObraCivilCalcDataDb;
+        private Dictionary<int, double> coefsReduccionPlantas;
         private List<int> PEMRPresupuestos;
 
-        protected readonly UrbanizacionCalcDataDb urbanizacionCalcDataDb;
-
-        public CalculationService(EdificacionCalcDataDb edificacionCalcDataDb, EdificacionPlantasCalcDataDb edificacionPlantasCalcDataDb, 
-            CoefHObraCivilCalcDataDb coefHObraCivilCalcDataDb, CoefsObraCivilCalcDataDb coefsObraCivilCalcDataDb,
-            ObraCivilCalcDataDb obraCivilCalcDataDb, PEMRObraCivilCalcDataDb pEMRObraCivilCalcDataDb,
-            UrbanizacionCalcDataDb urbanizacionCalcDataDb)
+        public CalculationService(HonorariosDb honorariosDb)
         {
-            this.edificacionCalcDataDb = edificacionCalcDataDb;
-            this.edificacionPlantasCalcDataDb = edificacionPlantasCalcDataDb;
+            this.honorariosDb = honorariosDb;
 
-            coefsReduccionPlantas = this.edificacionPlantasCalcDataDb.EdificacionPlantasCalcDatas.ToDictionary(p => p.Id, p => p.Coef);
+            coefsReduccionPlantas = this.honorariosDb.EdificacionPlantasCalcDatas
+                .ToDictionary(p => p.Id, p => p.Coef);
 
-            this.coefHObraCivilCalcDataDb = coefHObraCivilCalcDataDb;
-            this.coefsObraCivilCalcDataDb = coefsObraCivilCalcDataDb;
-            this.obraCivilCalcDataDb = obraCivilCalcDataDb;
-            this.pemrObraCivilCalcDataDb = pEMRObraCivilCalcDataDb;
+            PEMRPresupuestos = this.honorariosDb.PEMRObraCivilCalcDatas
+                .Select(p => p.Presupuesto).ToList();
 
-            PEMRPresupuestos = this.pemrObraCivilCalcDataDb.PEMRObraCivilCalcDatas.Select(p => p.Presupuesto).ToList();
-
-            this.urbanizacionCalcDataDb = urbanizacionCalcDataDb;
-
-            this.interpreter = new Interpreter(this.edificacionCalcDataDb, this.obraCivilCalcDataDb, this.urbanizacionCalcDataDb);
+            this.interpreter = new Interpreter(this.honorariosDb);
         }
 
         public async Task<HonorariosCalculationResponse> CalculateAsync(HonorariosCalculationRequest request)
         {
-            switch (request) {
+            switch (request)
+            {
                 case EdificationCalculationRequest r:
                     return await CalculateAsync(r);
 
@@ -63,7 +48,7 @@ namespace API_Backend_App_Honorarios.Services
         {
             HonorariosCalculationResponse response = new HonorariosCalculationResponse();
 
-            interpreter.SetCalculationMode(CalculationMode.EDIFICACION);
+            interpreter.SetCalculationMode(CalculationMode.ObraCivil);
 
             foreach (AddonInfo addon in request.SelectedAddons)
             {
@@ -73,7 +58,7 @@ namespace API_Backend_App_Honorarios.Services
             int useIdx = 0;
 
             foreach (EdificationUse use in request.Uses)
-            {   
+            {
                 if (!use.Valid)
                 {
                     response.ProjectCosts.Add(0);
@@ -133,7 +118,7 @@ namespace API_Backend_App_Honorarios.Services
                 response.Responses.Add(new AddonCalculationResponse(addon.Id));
             }
 
-            ObraCivilCalcData? projectTypeFormula = await this.obraCivilCalcDataDb.ObraCivilCalcDatas.FindAsync(request.ProjectState.ToString());
+            ObraCivilCalcData? projectTypeFormula = await this.honorariosDb.ObraCivilCalcDatas.FindAsync(request.ProjectState.ToString());
 
             if (projectTypeFormula == null)
             {
@@ -163,29 +148,29 @@ namespace API_Backend_App_Honorarios.Services
 
                 int limit = this.PEMRPresupuestos.Where(x => x <= PEM).Cast<int?>().Max() ?? 0;
 
-                PEMRObraCivilCalcData? pemr = await this.pemrObraCivilCalcDataDb.PEMRObraCivilCalcDatas.FindAsync(limit);
+                PEMRObraCivilCalcData? pemr = await this.honorariosDb.PEMRObraCivilCalcDatas.FindAsync(limit);
 
                 double coef = pemr?.Coef ?? 1;
                 double reducido = pemr?.Reducido ?? PEM;
 
-                double CB = this.coefsObraCivilCalcDataDb.CoefsObraCivilCalcDatas.Find("CB")?.Coef ?? 1;
-                double CAAP = this.coefsObraCivilCalcDataDb.CoefsObraCivilCalcDatas.Find("CAAP")?.Coef ?? 1;
-                double CAMV = this.coefsObraCivilCalcDataDb.CoefsObraCivilCalcDatas.Find("CAMV")?.Coef ?? 1;
-                double CAPR = this.coefsObraCivilCalcDataDb.CoefsObraCivilCalcDatas.Find("CAPR")?.Coef ?? 1;
+                double CB = this.honorariosDb.CoefsObraCivilCalcDatas.Find("CB")?.Coef ?? 1;
+                double CAAP = this.honorariosDb.CoefsObraCivilCalcDatas.Find("CAAP")?.Coef ?? 1;
+                double CAMV = this.honorariosDb.CoefsObraCivilCalcDatas.Find("CAMV")?.Coef ?? 1;
+                double CAPR = this.honorariosDb.CoefsObraCivilCalcDatas.Find("CAPR")?.Coef ?? 1;
 
                 double CP = 0;
 
                 switch (request.ProjectState)
                 {
                     case CivilWorksProjectState.ANPP:
-                        CP = this.coefsObraCivilCalcDataDb.CoefsObraCivilCalcDatas.Find("CPAP")?.Coef ?? 0;
+                        CP = this.honorariosDb.CoefsObraCivilCalcDatas.Find("CPAP")?.Coef ?? 0;
                         break;
                     case CivilWorksProjectState.MEVP:
-                        CP = this.coefsObraCivilCalcDataDb.CoefsObraCivilCalcDatas.Find("CPMV")?.Coef ?? 0;
+                        CP = this.honorariosDb.CoefsObraCivilCalcDatas.Find("CPMV")?.Coef ?? 0;
                         break;
                 }
 
-                double HCoef = this.coefHObraCivilCalcDataDb.CoefHObraCivilCalcDatas.Find(use.Type)?.Coef ?? 1;
+                double HCoef = this.honorariosDb.CoefHObraCivilCalcDatas.Find(use.Type)?.Coef ?? 1;
 
                 interpreter.ClearVariables();
                 interpreter.AddVariables(("PEM", PEM), ("LIM", limit), ("COEF", coef), ("PRES", reducido), ("CB", CB), ("CAAP", CAAP), ("CAMV", CAMV), ("CAPR", CAPR), ("CP", CP), ("H", HCoef));
@@ -222,7 +207,7 @@ namespace API_Backend_App_Honorarios.Services
                 response.Responses.Add(new AddonCalculationResponse(addon.Id));
             }
 
-            UrbanizacionCalcData? projectTypeFormula = await this.urbanizacionCalcDataDb.UrbanizacionCalcDatas.FindAsync(request.ProjectState.ToString());
+            UrbanizacionCalcData? projectTypeFormula = await this.honorariosDb.UrbanizacionCalcDatas.FindAsync(request.ProjectState.ToString());
 
             if (projectTypeFormula == null)
             {

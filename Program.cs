@@ -1,6 +1,7 @@
 using API_Backend_App_Honorarios.Services;
 using API_Backend_App_Industrializacion.FontResolvers;
 using API_Backend_App_Industrializacion.Persistence;
+using API_Backend_App_Honorarios.Persistence;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Azure;
@@ -9,7 +10,6 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 
 using API_Backend_App_Honorarios.ExpressionInterpreting;
-using API_Backend_App_Honorarios.Persistence;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -20,52 +20,18 @@ builder.Services.AddControllers();
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
 
-string configuredDbPath = builder.Configuration.GetValue<string>("DatabaseLegacy:Path")
-    ?? Path.Combine("Data", "datosIndustralizacion.db");
-
-string dbPath = Path.IsPathRooted(configuredDbPath)
-    ? configuredDbPath
-    : Path.Combine(builder.Environment.ContentRootPath, configuredDbPath);
-
 builder.Logging.AddFilter("Microsoft.EntityFrameworkCore.Database.Command", LogLevel.Warning);
 
-// REPLACED BY SINGLE SQLSERVER INSTANCE
-/*builder.Services.AddDbContext<datosEstructuraDb>(options =>
-    options.UseSqlite($"Data Source={dbPath};Cache=Shared;"));
+builder.Services.Configure<PersistenceSettings>(builder.Configuration.GetSection("Persistence"));
 
-builder.Services.AddDbContext<datosPorcentajesDb>(options =>
-    options.UseSqlite($"Data Source={dbPath};Cache=Shared;"));*/
-
-// TO BE REPLACED BY THE NEW VALUES
-
-
-builder.Services.AddDbContext<EdificacionCalcDataDb>(options =>
+builder.Services.AddDbContext<HonorariosDb>(options =>
     options.UseSqlServer(builder.Configuration.GetValue<string>("Database:Path")));
 
-builder.Services.AddDbContext<EdificacionPlantasCalcDataDb>(options =>
-    options.UseSqlServer(builder.Configuration.GetValue<string>("Database:Path")));
-
-builder.Services.AddDbContext<ObraCivilCalcDataDb>(options =>
-    options.UseSqlServer(builder.Configuration.GetValue<string>("Database:Path")));
-
-builder.Services.AddDbContext<CoefsObraCivilCalcDataDb>(options =>
-    options.UseSqlServer(builder.Configuration.GetValue<string>("Database:Path")));
-
-builder.Services.AddDbContext<CoefHObraCivilCalcDataDb>(options =>
-    options.UseSqlServer(builder.Configuration.GetValue<string>("Database:Path")));
-
-builder.Services.AddDbContext<PEMRObraCivilCalcDataDb>(options =>
-    options.UseSqlServer(builder.Configuration.GetValue<string>("Database:Path")));
-
-builder.Services.AddDbContext<UrbanizacionCalcDataDb>(options =>
-    options.UseSqlServer(builder.Configuration.GetValue<string>("Database:Path")));
-
-/*builder.Services.AddDbContext<ProyectoDb>(options =>
-    options.UseSqlServer(builder.Configuration.GetValue<string>("Database:Path")));*/
 
 //builder.Services.AddScoped<ProjectPersistenceService>();
 
 builder.Services.AddScoped<CalculationService>();
+builder.Services.AddScoped<FetchService>();
 
 
 const string corsPolicyName = "ConfiguredCorsPolicy";
