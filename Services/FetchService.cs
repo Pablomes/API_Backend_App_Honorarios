@@ -44,5 +44,35 @@ namespace API_Backend_App_Honorarios.Services
         {
             return await this.honorariosDb.UrbanizacionTiposProyecto.Include(p => p.Docs.OrderBy(d => d.OrderIdx)).OrderBy(p => p.OrderIdx).ToListAsync();
         }
+
+        public async Task<EdificacionDocs> GetEdificationDocById(string Id)
+        {
+            return await this.honorariosDb.EdificacionDocs.FindAsync(Id);
+        }
+
+        public async Task<ObraCivilDocs> GetCivilWorksDocById(string Id)
+        {
+            return await this.honorariosDb.ObraCivilDocs.FindAsync(Id);
+        }
+
+        public async Task<UrbanizacionDocs> GetUrbanisationDocById(string Id)
+        {
+            return await this.honorariosDb.UrbanizacionDocs.FindAsync(Id);
+        }
+
+        public async Task<EdificacionTiposProyecto> GetEdificationProjectById(string Id)
+        {
+            return await this.honorariosDb.EdificacionTiposProyecto.FindAsync(Id);
+        }
+
+        public async Task<ObraCivilTiposProyecto> GetCivilWorksProjectById(string Id)
+        {
+            return await this.honorariosDb.ObraCivilTiposProyecto.FindAsync(Id);
+        }
+
+        public async Task<UrbanizacionTiposProyecto> GetUrbanisationProjectById(string Id)
+        {
+            return await this.honorariosDb.UrbanizacionTiposProyecto.FindAsync(Id);
+        }
     }
 }

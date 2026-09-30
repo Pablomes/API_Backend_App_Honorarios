@@ -29,6 +29,8 @@ namespace API_Backend_App_Honorarios.Persistence
         public DbSet<UrbanizacionDocs> UrbanizacionDocs => Set<UrbanizacionDocs>();
         public DbSet<UrbanizacionTiposProyecto> UrbanizacionTiposProyecto => Set<UrbanizacionTiposProyecto>();
 
+        public DbSet<ProyectoHonorario> Proyectos => Set<ProyectoHonorario>();
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.HasDefaultSchema(_schema);
@@ -91,6 +93,8 @@ namespace API_Backend_App_Honorarios.Persistence
                 .UsingEntity("UrbanizacionDocsProyecto",
                 l => l.HasOne(typeof(UrbanizacionDocs)).WithMany().HasForeignKey("Doc"),
                 r => r.HasOne(typeof(UrbanizacionTiposProyecto)).WithMany().HasForeignKey("Proy"));
+
+            modelBuilder.Entity<ProyectoHonorario>().ToTable("ProyectoHonorario");
 
             base.OnModelCreating(modelBuilder);
         }

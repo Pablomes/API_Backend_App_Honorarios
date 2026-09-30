@@ -1,9 +1,10 @@
-﻿using API_Backend_App_Industrializacion.Models;
+﻿using API_Backend_App_Honorarios.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using API_Backend_App_Honorarios.Persistence;
+using API_Backend_App_Honorarios.Models;
 
-namespace API_Backend_App_Industrializacion.Persistence
+namespace API_Backend_App_Honorarios.Persistence
 {
     public class ProyectoDb : DbContext
     {
@@ -14,7 +15,7 @@ namespace API_Backend_App_Industrializacion.Persistence
             _schema = settings.Value.Schema ?? "Data";
         }
 
-        public DbSet<Proyecto> Proyecto => Set<Proyecto>();
+        public DbSet<ProyectoHonorario> Proyecto => Set<ProyectoHonorario>();
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

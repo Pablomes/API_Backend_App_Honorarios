@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore;
 using API_Backend_App_Honorarios.Models;
 using API_Backend_App_Honorarios.Services;
 
-namespace API_Backend_App_Industrializacion.Controllers
+namespace API_Backend_App_Honorarios.Controllers
 {
     [ApiController]
     [Route("honorarios")]

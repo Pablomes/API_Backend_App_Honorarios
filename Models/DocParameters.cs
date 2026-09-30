@@ -1,4 +1,4 @@
-﻿namespace API_Backend_App_Industrializacion.Models
+﻿namespace API_Backend_App_Honorarios.Models
 {
     public class DocParameters
     {
@@ -10,7 +10,7 @@
         public string Projector { get; set; }
 
 
-        public double TotalIndustrializacion { get; set; }
+        public double TotalHonorarios { get; set; }
         public double CompPrefabricados { get; set; }
         public double ReduccionTiempo { get; set; }
         public Dictionary<string, double> SectionCompPrefabricados { get; set; }
@@ -26,9 +26,9 @@
             SubsectionLabelValues = new Dictionary<string, Dictionary<string, string>>();
         }
 
-        public DocParameters(double TotalIndustrializacion, double CompPrefabricados, double ReduccionTiempo, string ProjectName, string Location, string Developer, string Projector) : this()
+        public DocParameters(double TotalHonorarios, double CompPrefabricados, double ReduccionTiempo, string ProjectName, string Location, string Developer, string Projector) : this()
         {
-            this.TotalIndustrializacion = TotalIndustrializacion;
+            this.TotalHonorarios = TotalHonorarios;
             this.CompPrefabricados = CompPrefabricados;
             this.ReduccionTiempo = ReduccionTiempo;
 
@@ -42,7 +42,7 @@
         {
             /*
 
-            this.TotalIndustrializacion = request.TotalIndustrializacion;
+            this.TotalHonorarios = request.TotalHonorarios;
             this.CompPrefabricados = request.CompPrefabricados;
             this.ReduccionTiempo = request.ReduccionTiempo;
 

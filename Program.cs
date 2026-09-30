@@ -1,6 +1,9 @@
+using API_Backend_App_Honorarios.ExpressionInterpreting;
+using API_Backend_App_Honorarios.Models;
+using API_Backend_App_Honorarios.Persistence;
 using API_Backend_App_Honorarios.Services;
-using API_Backend_App_Industrializacion.FontResolvers;
-using API_Backend_App_Industrializacion.Persistence;
+using API_Backend_App_Honorarios.FontResolvers;
+using API_Backend_App_Honorarios.Models;
 using API_Backend_App_Honorarios.Persistence;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.EntityFrameworkCore;
@@ -9,11 +12,10 @@ using PdfSharp.Fonts;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-using API_Backend_App_Honorarios.ExpressionInterpreting;
-
 var builder = WebApplication.CreateBuilder(args);
 
 GlobalFontSettings.FontResolver = MontserratFontResolver.Instance;
+
 
 // Add services to the container.
 builder.Services.AddControllers();
@@ -28,10 +30,9 @@ builder.Services.AddDbContext<HonorariosDb>(options =>
     options.UseSqlServer(builder.Configuration.GetValue<string>("Database:Path")));
 
 
-//builder.Services.AddScoped<ProjectPersistenceService>();
-
 builder.Services.AddScoped<CalculationService>();
 builder.Services.AddScoped<FetchService>();
+builder.Services.AddScoped<ProjectPersistenceService>();
 
 
 const string corsPolicyName = "ConfiguredCorsPolicy";

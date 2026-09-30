@@ -1,122 +1,127 @@
-﻿using API_Backend_App_Industrializacion.Models;
-using Microsoft.AspNetCore.Mvc;
-using PdfSharp.Pdf;
+﻿using API_Backend_App_Honorarios.Models;
+using API_Backend_App_Honorarios.Pdf;
+using API_Backend_App_Honorarios.Services;
+using API_Backend_App_Honorarios.Tests;
+using API_Backend_App_Honorarios.Models;
 using Azure.Storage.Blobs;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Azure;
+using PdfSharp.Pdf;
 
-namespace API_Backend_App_Industrializacion.Controllers
+namespace API_Backend_App_Honorarios.Controllers
 {
     [ApiController]
-    [Route("industrializacionDoc")]
+    [Route("honorariosDoc")]
     public class DocumentController : ControllerBase
     {
-        /*
-
-        private readonly ILogger<DocumentController> logger;
-        private readonly ProjectPersistenceService projectPersistence;
+        private readonly ILogger<DocumentController> _logger;
+        private readonly ProjectPersistenceService _projectPersistence;
+        private readonly CalculationService calculationService;
+        private readonly FetchService fetchService;
         private readonly BlobServiceClient blobServiceClient;
         private readonly IConfiguration configuration;
 
-        public DocumentController(ILogger<DocumentController> logger, ProjectPersistenceService persistenceService, IAzureClientFactory<BlobServiceClient> clientFactory, IConfiguration configuration)
+        public DocumentController(ILogger<DocumentController> logger, ProjectPersistenceService persistenceService, CalculationService calculationService, FetchService fetchService, IAzureClientFactory<BlobServiceClient> clientFactory, IConfiguration configuration)
         {
-            this.logger = logger;
-            this.projectPersistence = persistenceService;
-            this.blobServiceClient = clientFactory.CreateClient("DevBlobStorage");
+            _logger = logger;
+            _projectPersistence = persistenceService;
+            blobServiceClient = clientFactory.CreateClient("DevBlobStorage");
             this.configuration = configuration;
+            this.calculationService = calculationService;
+            this.fetchService = fetchService;
         }
 
-        [HttpPost]
-        public async Task<IActionResult?> generatePDF([FromBody] DocRequest request)
+        [HttpGet("test")]
+        public async Task<IActionResult> GenerateTestPDF()
         {
-            logger.LogInformation("Generating industrializacion PDF");
+            var (testRequest, testResults) = DocRequestTestFactory.CreateEdifTestData();
 
-            Proyecto? proyectoRegistrado = await projectPersistence.registerProject(request.ProjectName, request.Location, request.Developer, request.Projector);
+            string fakeUuid = "Test-123456789";
+            DateTime fakeDate = DateTime.Now;
 
-            if (proyectoRegistrado == null)
-            {
-                logger.LogError("Industrializacion project registration returned null");
-                return Problem(
-                    title: "Internal Server Error",
-                    detail: "An unexpected error occurred.",
-                    statusCode: StatusCodes.Status500InternalServerError
-                );
-            }
+            HonorariosCalculationResponse response = new HonorariosCalculationResponse { ProjectCosts = new List<double>(), Responses = testResults };
 
-            IndustrializacionDoc documento = new IndustrializacionDoc(new DocParameters(request), proyectoRegistrado.CVE, proyectoRegistrado.FechaHoraCreacion);
+            HonorariosDoc documento = new HonorariosDoc(testRequest, response, fakeUuid, fakeDate, this.fetchService);
 
-            PdfDocument? doc = documento.generatePdf();
+            PdfDocument? doc = await documento.GeneratePdf();
 
-            if (doc == null)
-            {
-                logger.LogError("Industrializacion PDF generation returned null");
-                return Problem(
-                    title: "Internal Server Error",
-                    detail: "An unexpected error occurred.",
-                    statusCode: StatusCodes.Status500InternalServerError
-                );
-            }
+            if (doc == null) return Problem("Error al generar el PDF de prueba");
 
             using MemoryStream memStream = new MemoryStream();
             doc.Save(memStream, false);
             doc.Close();
-
             doc.Dispose();
 
             memStream.Position = 0;
 
-            string containerName = configuration["BlobContainerName"] ?? "pdf-documents";
+            return File(memStream.ToArray(), "application/pdf");
+        }
+
+        [HttpPost]
+        public async Task<IActionResult?> GeneratePDF([FromBody] DocRequest request)
+        {
+            _logger.LogInformation("Iniciando generación de PDF de Honorarios");
+
+            HonorariosCalculationResponse response = await calculationService.CalculateAsync(request.CalculationRequest);
+
+            ProyectoHonorario proyectoRegistrado = await _projectPersistence.RegisterProjectAsync(request.ProjectType, request.ActuationId);
+
+            HonorariosDoc documento = new HonorariosDoc(request, response, proyectoRegistrado.CVE, proyectoRegistrado.FechaHoraCreacion, fetchService);
+            PdfDocument? doc = await documento.GeneratePdf();
+
+            if (doc == null) return Problem("Error al generar PDF");
+
+            using MemoryStream memStream = new MemoryStream();
+            doc.Save(memStream, false);
+            doc.Close();
+            doc.Dispose();
+            memStream.Position = 0;
+
+            string containerName = configuration["BlobContainerName"] ?? "honorarios-pdf";
             string blobName = $"{proyectoRegistrado.CVE}.pdf";
 
-            var containerClient = this.blobServiceClient.GetBlobContainerClient(containerName);
-
+            var containerClient = blobServiceClient.GetBlobContainerClient(containerName);
             await containerClient.CreateIfNotExistsAsync();
             var blobClient = containerClient.GetBlobClient(blobName);
-            
+
             try
             {
                 await blobClient.UploadAsync(memStream);
-            } 
+            }
             catch (Exception e)
             {
                 return Problem(
                     title: "Internal Server Error",
-                    detail: "An unexpected error occurred.",
+                    detail: "An unexpected error occured.",
                     statusCode: StatusCodes.Status500InternalServerError
                 );
             }
 
-            return File(
-                fileContents: memStream.ToArray(),
-                contentType: "application/pdf",
-                fileDownloadName: "industrializacion_proyecto.pdf"
-            );
-
+            return File(memStream.ToArray(), "application/pdf", $"Honorarios_{proyectoRegistrado.CVE}.pdf");
         }
 
         [HttpGet("{cve}")]
-        public async Task<IActionResult> GetDocument(string cve)
+        public async Task<IActionResult> GetExistingProject(string cve)
         {
-            if (!(await this.projectPersistence.checkProjectExists(cve)))
+            if (!(await this._projectPersistence.checkProjectExists(cve)))
             {
-                logger.LogWarning($"Project {cve} not found in database.");
+                _logger.LogWarning($"Project {cve} not found in database.");
                 return NotFound($"Documento {cve} no se ha encontrado.");
             }
 
-            string containerName = configuration["BlobContainerName"] ?? "pdf-documents";
+            string containerName = configuration["BlobContainerName"] ?? "honorarios-pdf";
             BlobContainerClient containerClient = blobServiceClient.GetBlobContainerClient(containerName);
 
             BlobClient blobClient = containerClient.GetBlobClient($"{cve}.pdf");
 
             if (!await blobClient.ExistsAsync())
             {
-                logger.LogWarning("Document {DocumentCode} not found in Blob Storage.", cve);
+                _logger.LogWarning("Document {DocumentCode} not found in Blob Storage.", cve);
                 return NotFound($"Documento {cve} no se ha encontrado.");
             }
 
             var downloadInfo = await blobClient.DownloadStreamingAsync();
             return File(downloadInfo.Value.Content, "application/pdf", $"{cve}.pdf");
         }
-    */
-        
     }
-}
+}    

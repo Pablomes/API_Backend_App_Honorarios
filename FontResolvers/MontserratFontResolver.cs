@@ -1,7 +1,7 @@
 ﻿using PdfSharp.Fonts;
 using System.Reflection;
 
-namespace API_Backend_App_Industrializacion.FontResolvers
+namespace API_Backend_App_Honorarios.FontResolvers
 {
     public class MontserratFontResolver : IFontResolver
     {
@@ -15,10 +15,10 @@ namespace API_Backend_App_Industrializacion.FontResolvers
 
             Stream? stream = faceName switch
             {
-                "Montserrat#Regular" => asm.GetManifestResourceStream("API_Backend_App_Industrializacion.Materials.Fonts.Montserrat-Regular.ttf"),
-                "Montserrat#Bold" => asm.GetManifestResourceStream("API_Backend_App_Industrializacion.Materials.Fonts.Montserrat-Bold.ttf"),
-                "Montserrat#Italic" => asm.GetManifestResourceStream("API_Backend_App_Industrializacion.Materials.Fonts.Montserrat-Italic.ttf"),
-                "Montserrat#BoldItalic" => asm.GetManifestResourceStream("API_Backend_App_Industrializacion.Materials.Fonts.Montserrat-BoldItalic.ttf"),
+                "Montserrat#Regular" => asm.GetManifestResourceStream("API_Backend_App_Honorarios.Materials.Fonts.Montserrat-Regular.ttf"),
+                "Montserrat#Bold" => asm.GetManifestResourceStream("API_Backend_App_Honorarios.Materials.Fonts.Montserrat-Bold.ttf"),
+                "Montserrat#Italic" => asm.GetManifestResourceStream("API_Backend_App_Honorarios.Materials.Fonts.Montserrat-Italic.ttf"),
+                "Montserrat#BoldItalic" => asm.GetManifestResourceStream("API_Backend_App_Honorarios.Materials.Fonts.Montserrat-BoldItalic.ttf"),
                 _ => throw new ArgumentException($"Font not found: {faceName}")
             };
 

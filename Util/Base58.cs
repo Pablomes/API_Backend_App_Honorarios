@@ -1,4 +1,4 @@
-﻿namespace API_Backend_App_Industrializacion.Util
+﻿namespace API_Backend_App_Honorarios.Util
 {
     public class Base58
     {

@@ -1,7 +1,13 @@
-﻿namespace API_Backend_App_Industrializacion.Models
+﻿using API_Backend_App_Honorarios.Models;
+
+namespace API_Backend_App_Honorarios.Models
 {
     public class DocRequest
     {
+        public string ProjectType { get; set; }
+        public string ActuationId { get; set; }
+        public HonorariosCalculationRequest CalculationRequest { get; set; }
+
         /*
 
         public string ProjectName { get; set; }
@@ -9,14 +15,14 @@
         public string Developer { get; set; }
         public string Projector { get; set; }
 
-        public double TotalIndustrializacion { get; set; }
+        public double TotalHonorarios { get; set; }
         public double CompPrefabricados { get; set; }
         public double ReduccionTiempo { get; set; }
         public List<SectionDocRequest> Sections { get; set; } = [];
 
-        public DocRequest(double TotalIndustrializacion, double CompPrefabricados, double ReduccionTiempo, string ProjectName, string Location, string Developer, string Projector, List<SectionDocRequest> Sections)
+        public DocRequest(double TotalHonorarios, double CompPrefabricados, double ReduccionTiempo, string ProjectName, string Location, string Developer, string Projector, List<SectionDocRequest> Sections)
         {
-            this.TotalIndustrializacion = TotalIndustrializacion;
+            this.TotalHonorarios = TotalHonorarios;
             this.CompPrefabricados = CompPrefabricados;
             this.ReduccionTiempo = ReduccionTiempo;
 
@@ -37,7 +43,7 @@
                 globalString += $"{section.ToString()}, ";
             }
 
-            return $"DocRequest : {{ TotalIndustrializacion : {TotalIndustrializacion}, CompPrefabricados : {CompPrefabricados}, ReduccionTiempo : {ReduccionTiempo}, ProjectName : {ProjectName}, Location: {Location}, Developer : {Developer}, Projector : {Projector}, Sections : {globalString} }}";
+            return $"DocRequest : {{ TotalHonorarios : {TotalHonorarios}, CompPrefabricados : {CompPrefabricados}, ReduccionTiempo : {ReduccionTiempo}, ProjectName : {ProjectName}, Location: {Location}, Developer : {Developer}, Projector : {Projector}, Sections : {globalString} }}";
         }
 
         */

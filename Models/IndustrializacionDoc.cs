@@ -10,11 +10,11 @@ namespace API_Backend_App_Industrializacion.Models
     {
         /*
 
-        private static readonly XColor PrimaryColour = XColor.FromArgb(80, 129, 79);
-        private static readonly XColor SecondaryColour = XColor.FromArgb(240, 240, 240);
-        private static readonly XColor DarkerSecondaryColour = XColor.FromArgb(85, 85, 85);
-        private static readonly XColor TextColour = XColor.FromArgb(51, 51, 51);
-        private static readonly XColor BackgroundColour = XColor.FromArgb(255, 255, 255);
+        private static readonly XColor PrimaryColor = XColor.FromArgb(80, 129, 79);
+        private static readonly XColor SecondaryColor = XColor.FromArgb(240, 240, 240);
+        private static readonly XColor DarkerSecondaryColor = XColor.FromArgb(85, 85, 85);
+        private static readonly XColor TextColor = XColor.FromArgb(51, 51, 51);
+        private static readonly XColor BackgroundColor = XColor.FromArgb(255, 255, 255);
 
         private readonly XFont TitleFont = new XFont("Montserrat", 12, XFontStyleEx.Bold); // 9pt / 0.75
         private readonly XFont HeaderFont = new XFont("Montserrat", 6, XFontStyleEx.Bold); 
@@ -27,13 +27,13 @@ namespace API_Backend_App_Industrializacion.Models
         private readonly XFont MediumWheelFont = new XFont("Montserrat", 14, XFontStyleEx.Bold); // 10.5 / 0.75
         private readonly XFont SmallWheelFont = new XFont("Montserrat", 9.3, XFontStyleEx.Bold); // 7 / 0.75
 
-        private XGraphics graphics = null!;
+        private X_gfx graphics = null!;
         private PdfPage page = null!;
 
-        private double PageWidth => page.Width.Point;
-        private double PageHeight => page.Height.Point;
+        private double page.Width.Point => page.Width.Point;
+        private double page.Height.Point => page.Height.Point;
 
-        private double leftMargin = 0.0;
+        private double margin = 0.0;
         private double footHeight = 59.535;
 
         private string[] sectionTitles = { "Cimentación", "Estructura", "Envolvente", "Distribución interior" };
@@ -75,7 +75,7 @@ namespace API_Backend_App_Industrializacion.Models
             page.Size = PdfSharp.PageSize.A4;
             page.Orientation = PdfSharp.PageOrientation.Landscape;
 
-            graphics = XGraphics.FromPdfPage(page);
+            graphics = X_gfx.FromPdfPage(page);
 
             DrawHeader();
 
@@ -97,9 +97,9 @@ namespace API_Backend_App_Industrializacion.Models
             const double headerWidth = 779.625;
 
             const double headerVerticalPos = 26;
-            double headerHorizontalPos = (PageWidth - headerWidth) / 2;
+            double headerHorizontalPos = (page.Width.Point - headerWidth) / 2;
 
-            leftMargin = headerHorizontalPos;
+            margin = headerHorizontalPos;
 
             const double textMargin = 11.4;
 
@@ -113,23 +113,23 @@ namespace API_Backend_App_Industrializacion.Models
             double headerDivisionPoint = headerHorizontalPos + headerLeftWidth;
 
             // BORDE DE LA CABECERA
-            graphics.DrawRectangle(new XPen(PrimaryColour, borderWidth), headerHorizontalPos, headerVerticalPos, headerWidth, headerHeight);
+            graphics.DrawRectangle(new XPen(PrimaryColor, borderWidth), headerHorizontalPos, headerVerticalPos, headerWidth, headerHeight);
 
             // TITULO DEL DOCUMENTO
             graphics.DrawString(
                 "NIVEL DE INDUSTRIALIZACIÓN DEL PROYECTO",
                 TitleFont,
-                new XSolidBrush(TextColour),
+                new XSolidBrush(TextColor),
                 new XRect(headerHorizontalPos + textMargin, headerVerticalPos + (headerHeight - TitleFont.Size) / 2, headerLeftWidth - textMargin, TitleFont.Size),
                 XStringFormats.CenterLeft
             );
 
             // SEPARADOR
-            graphics.DrawLine(new XPen(PrimaryColour, separatorWidth), headerDivisionPoint, headerVerticalPos + textMargin, headerDivisionPoint, headerVerticalPos + headerHeight - textMargin);
+            graphics.DrawLine(new XPen(PrimaryColor, separatorWidth), headerDivisionPoint, headerVerticalPos + textMargin, headerDivisionPoint, headerVerticalPos + headerHeight - textMargin);
 
             // METADATOS EN LA CABECERA
-            XSolidBrush categoryBrush = new XSolidBrush(DarkerSecondaryColour);
-            XSolidBrush textBrush = new XSolidBrush(TextColour);
+            XSolidBrush categoryBrush = new XSolidBrush(DarkerSecondaryColor);
+            XSolidBrush textBrush = new XSolidBrush(TextColor);
 
             double leftCategoryWidth = 32.6;
             double rightCategoryWidth = 37;
@@ -207,22 +207,22 @@ namespace API_Backend_App_Industrializacion.Models
             XRect tinyRect = new XRect(centerX - innerRadius, centerY - innerRadius, 2 * innerRadius, 2 * innerRadius);
 
             // CIRCULO DE FONDO
-            graphics.DrawEllipse(new XSolidBrush(SecondaryColour), donutRect);
-            //graphics.DrawArc(new XPen(SecondaryColour, radius - innerRadius), donutRect, -90, 360);
+            graphics.DrawEllipse(new XSolidBrush(SecondaryColor), donutRect);
+            //graphics.DrawArc(new XPen(SecondaryColor, radius - innerRadius), donutRect, -90, 360);
 
             // CIRCULO DE PROGRESO
             if (value > 0)
-                graphics.DrawPie(new XSolidBrush(PrimaryColour), donutRect, -90, value / 100.0 * 360.0);
-            //graphics.DrawArc(new XPen(PrimaryColour, radius - innerRadius), donutRect, -90, value / 100.0 * 360.0);
+                graphics.DrawPie(new XSolidBrush(PrimaryColor), donutRect, -90, value / 100.0 * 360.0);
+            //graphics.DrawArc(new XPen(PrimaryColor, radius - innerRadius), donutRect, -90, value / 100.0 * 360.0);
 
             // CIRCULO MASCARA
-            graphics.DrawEllipse(new XSolidBrush(BackgroundColour), tinyRect);
+            graphics.DrawEllipse(new XSolidBrush(BackgroundColor), tinyRect);
 
             // LABEL CON EL VALOR
             graphics.DrawString(
                 $"{value.ToString("0.0", new CultureInfo("es-ES"))}%",
                 font,
-                new XSolidBrush(TextColour),
+                new XSolidBrush(TextColor),
                 donutRect,
                 XStringFormats.Center
             );
@@ -235,12 +235,12 @@ namespace API_Backend_App_Industrializacion.Models
             graphics.DrawString(
                 "NIVEL DE INDUSTRIALIZACIÓN",
                 SubtitleFont,
-                new XSolidBrush(TextColour),
-                new XRect(leftMargin, titleYPos, PageWidth / 2 - leftMargin, SubtitleFont.Size),
+                new XSolidBrush(TextColor),
+                new XRect(margin, titleYPos, page.Width.Point / 2 - margin, SubtitleFont.Size),
                 XStringFormats.Center
             );
 
-            double centerX = (PageWidth - 2 * leftMargin) / 4 + leftMargin;
+            double centerX = (page.Width.Point - 2 * margin) / 4 + margin;
             double centerY = 232.47;
             double radius = 66.62;
 
@@ -251,42 +251,42 @@ namespace API_Backend_App_Industrializacion.Models
 
         private void DrawSubDonuts()
         {
-            double titleYPos = PageHeight - 232.47;
+            double titleYPos = page.Height.Point - 232.47;
 
-            double titleWidth = (PageWidth / 2 - leftMargin) / 2;
+            double titleWidth = (page.Width.Point / 2 - margin) / 2;
 
             graphics.DrawString(
                 "Componentes prefabricados",
                 SubdonutFont,
-                new XSolidBrush(TextColour),
-                new XRect(leftMargin, titleYPos, titleWidth, SubdonutFont.Size),
+                new XSolidBrush(TextColor),
+                new XRect(margin, titleYPos, titleWidth, SubdonutFont.Size),
                 XStringFormats.Center
             );
 
             graphics.DrawString(
                 "Reducción de tiempo y medios",
                 SubdonutFont,
-                new XSolidBrush(TextColour),
-                new XRect(leftMargin + titleWidth, titleYPos, titleWidth, SubdonutFont.Size),
+                new XSolidBrush(TextColor),
+                new XRect(margin + titleWidth, titleYPos, titleWidth, SubdonutFont.Size),
                 XStringFormats.Center
             );
 
             double radius = 48.195;
 
-            drawProgressDonut(leftMargin + titleWidth / 2, PageHeight + radius - 201.285, radius, this.Parameters?.CompPrefabricados ?? 0, MediumWheelFont);
+            drawProgressDonut(margin + titleWidth / 2, page.Height.Point + radius - 201.285, radius, this.Parameters?.CompPrefabricados ?? 0, MediumWheelFont);
 
-            drawProgressDonut(leftMargin + 3 * titleWidth / 2, PageHeight + radius - 201.285, radius, this.Parameters?.ReduccionTiempo ?? 0, MediumWheelFont);
+            drawProgressDonut(margin + 3 * titleWidth / 2, page.Height.Point + radius - 201.285, radius, this.Parameters?.ReduccionTiempo ?? 0, MediumWheelFont);
         }
 
         private void DrawFoot()
         {
 
             // LINEA DE SEPARACION DEL PIE
-            graphics.DrawLine(new XPen(PrimaryColour), leftMargin, PageHeight - footHeight, PageWidth - leftMargin, PageHeight - footHeight);
+            graphics.DrawLine(new XPen(PrimaryColor), margin, page.Height.Point - footHeight, page.Width.Point - margin, page.Height.Point - footHeight);
 
             const string resourceName = "API_Backend_App_Industrializacion.Materials.Images.LogoIVEPDF.png"; 
 
-            Assembly assembly = typeof(IndustrializacionDoc).Assembly;
+            Assembly assembly = typeof(Doc).Assembly;
             using Stream stream = assembly.GetManifestResourceStream(resourceName)
                 ?? throw new InvalidOperationException($"Embedded resource not found: {resourceName}");
 
@@ -298,12 +298,12 @@ namespace API_Backend_App_Industrializacion.Models
 
             const double imageModifier = 0.6;
             double imageMargin = (1 - imageModifier) * footHeight / 2;
-            double imageLeftMargin = 10;
+            double image_margin = 10;
 
             double imageHeight = footHeight * imageModifier;
             double imageWidth = (imageHeight / logo.PixelHeight) * logo.PixelWidth;
 
-            graphics.DrawImage(logo, new XRect(leftMargin + imageLeftMargin, PageHeight - footHeight + imageMargin, imageWidth, imageHeight));
+            graphics.DrawImage(logo, new XRect(margin + image_margin, page.Height.Point - footHeight + imageMargin, imageWidth, imageHeight));
 
             string dateString = "DD/MM/YYYY";
 
@@ -312,8 +312,8 @@ namespace API_Backend_App_Industrializacion.Models
             graphics.DrawString(
             dateString,
             RegularFont,
-            new XSolidBrush(TextColour),
-            new XRect(PageWidth / 2, PageHeight - footHeight + 2 * imageMargin, PageWidth / 2 - leftMargin, RegularFont.Size),
+            new XSolidBrush(TextColor),
+            new XRect(page.Width.Point / 2, page.Height.Point - footHeight + 2 * imageMargin, page.Width.Point / 2 - margin, RegularFont.Size),
             XStringFormats.CenterRight
             );
 
@@ -322,8 +322,8 @@ namespace API_Backend_App_Industrializacion.Models
             graphics.DrawString(
             codeString,
             RegularFont,
-            new XSolidBrush(TextColour),
-            new XRect(PageWidth / 2, PageHeight - 1.5 * imageMargin - RegularFont.Size, PageWidth / 2 - leftMargin, RegularFont.Size),
+            new XSolidBrush(TextColor),
+            new XRect(page.Width.Point / 2, page.Height.Point - 1.5 * imageMargin - RegularFont.Size, page.Width.Point / 2 - margin, RegularFont.Size),
             XStringFormats.CenterRight
             );
         }
@@ -336,15 +336,15 @@ namespace API_Backend_App_Industrializacion.Models
             graphics.DrawString(
                 "DETALLE POR CAPÍTULOS",
                 SubtitleFont,
-                new XSolidBrush(TextColour),
-                new XRect(PageWidth / 2 + titleXOffset, titleYPos, PageWidth / 2, SubtitleFont.Size),
+                new XSolidBrush(TextColor),
+                new XRect(page.Width.Point / 2 + titleXOffset, titleYPos, page.Width.Point / 2, SubtitleFont.Size),
                 XStringFormats.CenterLeft
             );
 
             double verticalMargin = 32.6025;
             double verticalPadding = 17.01;
 
-            double availableSectionHeight = PageHeight - footHeight - titleYPos - SubtitleFont.Size - verticalMargin * 2;
+            double availableSectionHeight = page.Height.Point - footHeight - titleYPos - SubtitleFont.Size - verticalMargin * 2;
 
             double sectionHeight = (availableSectionHeight - 3 * verticalPadding) / 4;
             double sectionWidth = 218.295;
@@ -352,14 +352,14 @@ namespace API_Backend_App_Industrializacion.Models
             for (int i = 0; i < 4; i++)
             {
                 DrawSection(i + 1, sectionTitles[i], sectionID[i], subsectionNames[i], subsectionID[i],
-                    PageWidth / 2 + titleXOffset, titleYPos + SubtitleFont.Size + verticalMargin + (sectionHeight + verticalPadding) * i,
-                    sectionWidth, sectionHeight, PageWidth / 2 - titleXOffset - leftMargin);
+                    page.Width.Point / 2 + titleXOffset, titleYPos + SubtitleFont.Size + verticalMargin + (sectionHeight + verticalPadding) * i,
+                    sectionWidth, sectionHeight, page.Width.Point / 2 - titleXOffset - margin);
             }
 
             // PROGRESS WHEEL TITLES
             double wheelTitleMargin = verticalMargin - 11.34;
 
-            double wheelTitleWidth = (PageWidth / 2 - leftMargin - titleXOffset - sectionWidth) / 2;
+            double wheelTitleWidth = (page.Width.Point / 2 - margin - titleXOffset - sectionWidth) / 2;
 
             /* Componentes prefabricados */
 
@@ -367,16 +367,16 @@ namespace API_Backend_App_Industrializacion.Models
             graphics.DrawString(
                 "Componentes",
                 RegularFont,
-                new XSolidBrush(PrimaryColour),
-                new XRect(PageWidth / 2 + titleXOffset + sectionWidth, titleYPos + SubtitleFont.Size + wheelTitleMargin, wheelTitleWidth, RegularFont.Size),
+                new XSolidBrush(PrimaryColor),
+                new XRect(page.Width.Point / 2 + titleXOffset + sectionWidth, titleYPos + SubtitleFont.Size + wheelTitleMargin, wheelTitleWidth, RegularFont.Size),
                 XStringFormats.Center
             );
 
             graphics.DrawString(
                 "prefabricados",
                 RegularFont,
-                new XSolidBrush(PrimaryColour),
-                new XRect(PageWidth / 2 + titleXOffset + sectionWidth, titleYPos + SubtitleFont.Size + wheelTitleMargin + RegularFont.Size, wheelTitleWidth, RegularFont.Size),
+                new XSolidBrush(PrimaryColor),
+                new XRect(page.Width.Point / 2 + titleXOffset + sectionWidth, titleYPos + SubtitleFont.Size + wheelTitleMargin + RegularFont.Size, wheelTitleWidth, RegularFont.Size),
                 XStringFormats.Center
             );
 
@@ -388,16 +388,16 @@ namespace API_Backend_App_Industrializacion.Models
             graphics.DrawString(
                 "Reducción de",
                 RegularFont,
-                new XSolidBrush(PrimaryColour),
-                new XRect(PageWidth / 2 + titleXOffset + sectionWidth + wheelTitleWidth, titleYPos + SubtitleFont.Size + wheelTitleMargin, wheelTitleWidth, RegularFont.Size),
+                new XSolidBrush(PrimaryColor),
+                new XRect(page.Width.Point / 2 + titleXOffset + sectionWidth + wheelTitleWidth, titleYPos + SubtitleFont.Size + wheelTitleMargin, wheelTitleWidth, RegularFont.Size),
                 XStringFormats.Center
             );
 
             graphics.DrawString(
                 "tiempos y medios",
                 RegularFont,
-                new XSolidBrush(PrimaryColour),
-                new XRect(PageWidth / 2 + titleXOffset + sectionWidth + wheelTitleWidth, titleYPos + SubtitleFont.Size + wheelTitleMargin + RegularFont.Size, wheelTitleWidth, RegularFont.Size),
+                new XSolidBrush(PrimaryColor),
+                new XRect(page.Width.Point / 2 + titleXOffset + sectionWidth + wheelTitleWidth, titleYPos + SubtitleFont.Size + wheelTitleMargin + RegularFont.Size, wheelTitleWidth, RegularFont.Size),
                 XStringFormats.Center
             );
         }
@@ -412,7 +412,7 @@ namespace API_Backend_App_Industrializacion.Models
             graphics.DrawString(
                 $"{sectionNum}. {title}",
                 SectionFont,
-                new XSolidBrush(TextColour),
+                new XSolidBrush(TextColor),
                 new XRect(topLeftX, topLeftY + verticalMargin, width, SectionFont.Size),
                 XStringFormats.CenterLeft
             );
@@ -435,14 +435,14 @@ namespace API_Backend_App_Industrializacion.Models
 
         private void DrawSubsection(int sectionNum, int subsectionNum, string title, string sectionID, string ID, double topLeftX, double topLeftY, double width, double height)
         {
-            double leftMargin = 2.835;
+            double margin = 2.835;
             double valueWidth = 34.02;
 
             graphics.DrawString(
                 $"{sectionNum}.{subsectionNum} {title}",
                 RegularFont,
-                new XSolidBrush(TextColour),
-                new XRect(topLeftX + leftMargin, topLeftY, width - valueWidth, height),
+                new XSolidBrush(TextColor),
+                new XRect(topLeftX + margin, topLeftY, width - valueWidth, height),
                 XStringFormats.CenterLeft
             );
 
@@ -459,7 +459,7 @@ namespace API_Backend_App_Industrializacion.Models
             graphics.DrawString(
                 $"{labelValue}",
                 RegularFont,
-                new XSolidBrush(PrimaryColour),
+                new XSolidBrush(PrimaryColor),
                 new XRect(topLeftX + width - valueWidth, topLeftY, valueWidth, height),
                 XStringFormats.Center
             );
@@ -468,7 +468,7 @@ namespace API_Backend_App_Industrializacion.Models
 
             double linePosY = topLeftY + height / 2 + RegularFont.Size / 2 + lineSeparation;
 
-            graphics.DrawLine(new XPen(SecondaryColour, 1), topLeftX, linePosY, topLeftX + width, linePosY);
+            graphics.DrawLine(new XPen(SecondaryColor, 1), topLeftX, linePosY, topLeftX + width, linePosY);
         }
 
         private void DrawSectionWheels(string sectionID, double topX, double topY, double width, double height)
