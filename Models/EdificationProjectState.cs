@@ -10,7 +10,7 @@ namespace API_Backend_App_Honorarios.Models
         PRBA,
         PREJ,
         PBEJ,
-        OIOB,
+        DIOB,
         PBED,
         ATSU,
         ACPR

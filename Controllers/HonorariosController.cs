@@ -76,17 +76,17 @@ namespace API_Backend_App_Honorarios.Controllers
                 {
                     case EdificationCalculationRequest edif:
                         logger.LogInformation("Calculation 'honorarios' value for EdificationCalculationRequest.");
-                        response = await calcService.CalculateAsync(edif);
+                        response = await calcService.CalculateAsync(edif, true);
                         break;
 
                     case CivilWorksCalculationRequest obci:
                         logger.LogInformation("Calculation 'honorarios' value for CivilWorksCalculationRequest.");
-                        response = await calcService.CalculateAsync(obci);
+                        response = await calcService.CalculateAsync(obci, true);
                         break;
 
                     case UrbanisationCalculationRequest urba:
                         logger.LogInformation("Calculation 'honorarios' value for UrbanisationCalculationRequest.");
-                        response = await calcService.CalculateAsync(urba);
+                        response = await calcService.CalculateAsync(urba, true);
                         break;
                 }
 

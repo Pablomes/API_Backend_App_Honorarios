@@ -62,11 +62,11 @@ namespace API_Backend_App_Honorarios.Controllers
         {
             _logger.LogInformation("Iniciando generación de PDF de Honorarios");
 
-            HonorariosCalculationResponse response = await calculationService.CalculateAsync(request.CalculationRequest);
+            HonorariosCalculationResponse response = await calculationService.CalculateAsync(request.CalculationRequest, true);
 
             ProyectoHonorario proyectoRegistrado = await _projectPersistence.RegisterProjectAsync(request.ProjectType, request.ActuationId);
 
-            HonorariosDoc documento = new HonorariosDoc(request, response, proyectoRegistrado.CVE, proyectoRegistrado.FechaHoraCreacion, fetchService);
+            HonorariosDocVertical documento = new HonorariosDocVertical(request, response, proyectoRegistrado.CVE, proyectoRegistrado.FechaHoraCreacion, fetchService);
             PdfDocument? doc = await documento.GeneratePdf();
 
             if (doc == null) return Problem("Error al generar PDF");
