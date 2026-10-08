@@ -27,28 +27,28 @@ namespace API_Backend_App_Honorarios.Services
             this.interpreter = new Interpreter(this.honorariosDb);
         }
 
-        public async Task<HonorariosCalculationResponse> CalculateAsync(HonorariosCalculationRequest request)
+        public async Task<HonorariosCalculationResponse> CalculateAsync(HonorariosCalculationRequest request, bool round = false)
         {
             switch (request)
             {
                 case EdificationCalculationRequest r:
-                    return await CalculateAsync(r);
+                    return await CalculateAsync(r, round);
 
                 case CivilWorksCalculationRequest r:
-                    return await CalculateAsync(r);
+                    return await CalculateAsync(r, round);
 
                 case UrbanisationCalculationRequest r:
-                    return await CalculateAsync(r);
+                    return await CalculateAsync(r, round);
             }
 
             throw new ArgumentException("Wrong argument type.");
         }
 
-        public async Task<HonorariosCalculationResponse> CalculateAsync(EdificationCalculationRequest request)
+        public async Task<HonorariosCalculationResponse> CalculateAsync(EdificationCalculationRequest request, bool round = false)
         {
             HonorariosCalculationResponse response = new HonorariosCalculationResponse();
 
-            interpreter.SetCalculationMode(CalculationMode.ObraCivil);
+            interpreter.SetCalculationMode(CalculationMode.EDIFICACION);
 
             foreach (AddonInfo addon in request.SelectedAddons)
             {
@@ -86,7 +86,7 @@ namespace API_Backend_App_Honorarios.Services
                 interpreter.ClearVariables();
                 interpreter.AddVariables(("PEM", (double)(use.UnitPEM * use.Area)), ("SUP", (double)use.Area), ("COP", floorCoef), ("PI", installationPEM));
 
-                response.ProjectCosts.Add(await interpreter.GetValue(request.ProjectState.ToString()));
+                response.ProjectCosts.Add(await interpreter.GetValue(request.ProjectState.ToString(), round));
 
                 foreach (AddonInfo addon in request.SelectedAddons)
                 {
@@ -98,7 +98,7 @@ namespace API_Backend_App_Honorarios.Services
                         continue;
                     }
 
-                    addonResponse.Values.Add(await interpreter.GetValue(addon.Id));
+                    addonResponse.Values.Add(await interpreter.GetValue(addon.Id, round));
                 }
 
                 useIdx++;
@@ -107,7 +107,7 @@ namespace API_Backend_App_Honorarios.Services
             return response;
         }
 
-        public async Task<HonorariosCalculationResponse> CalculateAsync(CivilWorksCalculationRequest request)
+        public async Task<HonorariosCalculationResponse> CalculateAsync(CivilWorksCalculationRequest request, bool round = false)
         {
             HonorariosCalculationResponse response = new HonorariosCalculationResponse();
 
@@ -175,7 +175,7 @@ namespace API_Backend_App_Honorarios.Services
                 interpreter.ClearVariables();
                 interpreter.AddVariables(("PEM", PEM), ("LIM", limit), ("COEF", coef), ("PRES", reducido), ("CB", CB), ("CAAP", CAAP), ("CAMV", CAMV), ("CAPR", CAPR), ("CP", CP), ("H", HCoef));
 
-                response.ProjectCosts.Add(await interpreter.GetValue(request.ProjectState.ToString()));
+                response.ProjectCosts.Add(await interpreter.GetValue(request.ProjectState.ToString(), round));
 
                 foreach (AddonInfo addon in request.SelectedAddons)
                 {
@@ -187,7 +187,7 @@ namespace API_Backend_App_Honorarios.Services
                         continue;
                     }
 
-                    addonResponse.Values.Add(await interpreter.GetValue(addon.Id));
+                    addonResponse.Values.Add(await interpreter.GetValue(addon.Id, round));
                 }
 
                 useIdx++;
@@ -196,7 +196,7 @@ namespace API_Backend_App_Honorarios.Services
             return response;
         }
 
-        public async Task<HonorariosCalculationResponse> CalculateAsync(UrbanisationCalculationRequest request)
+        public async Task<HonorariosCalculationResponse> CalculateAsync(UrbanisationCalculationRequest request, bool rounded = false)
         {
             HonorariosCalculationResponse response = new HonorariosCalculationResponse();
 
@@ -239,7 +239,7 @@ namespace API_Backend_App_Honorarios.Services
                 interpreter.ClearVariables();
                 interpreter.AddVariables(("PEM", PEM), ("SUP", SUP), ("SUPV", (double)use.GreenArea), ("SUPN", (double)use.NetworkArea));
 
-                response.ProjectCosts.Add(await interpreter.GetValue(request.ProjectState.ToString()));
+                response.ProjectCosts.Add(await interpreter.GetValue(request.ProjectState.ToString(), rounded));
 
                 foreach (AddonInfo addon in request.SelectedAddons)
                 {
@@ -251,7 +251,7 @@ namespace API_Backend_App_Honorarios.Services
                         continue;
                     }
 
-                    addonResponse.Values.Add(await interpreter.GetValue(addon.Id));
+                    addonResponse.Values.Add(await interpreter.GetValue(addon.Id, rounded));
                 }
 
                 useIdx++;

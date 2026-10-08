@@ -8,7 +8,7 @@ namespace API_Backend_App_Honorarios.Models
         MEVP,
         ANPP,
         PRCO,
-        PCOD,
+        PCDO,
         DOAT
     }
 }

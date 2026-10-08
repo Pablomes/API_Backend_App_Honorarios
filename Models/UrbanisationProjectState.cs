@@ -7,7 +7,7 @@ namespace API_Backend_App_Honorarios.Models
     {
         ANPR,
         PROY,
-        DIOB,
+        DOBR,
         EIAP,
         EIPP
     }

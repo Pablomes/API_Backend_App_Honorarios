@@ -2,7 +2,7 @@
 {
     public enum CalculationMode
     {
-        ObraCivil,
+        EDIFICACION,
         OBRA_CIVIL,
         URBANIZACION
     }

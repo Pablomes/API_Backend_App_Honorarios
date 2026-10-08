@@ -706,6 +706,8 @@ namespace API_Backend_App_Honorarios.Pdf
             double additionalDocsCost = CalcAdditionalDocsCost();
             double totalPEM = CalcTotalPEM();
             double estimatedCost = projectCost + additionalDocsCost;
+            double projectPerEstimated = estimatedCost == 0 ? 0 : (projectCost / estimatedCost);
+            double additionalPerEstimated = estimatedCost == 0 ? 0 : (additionalDocsCost / estimatedCost);
             double costPerPEMPercentage = totalPEM == 0 ? 0 : (estimatedCost / totalPEM) * 100;
 
             double innerMargin = 15;
@@ -759,18 +761,22 @@ namespace API_Backend_App_Honorarios.Pdf
             currentY += 55;
 
             double rowX = startX + innerMargin;
-            XPen separatorPen = new XPen(BorderColor, 4);
+            XPen unfilledProgressPen = new XPen(BorderColor, 4);
+            XPen filledProgressPen = new XPen(PrimaryColor, 4);
 
             currentY += 25;
             DrawSummaryRow(projectStateLabel, projectCostValue, rowX, currentY, rowWidth);
             currentY += 15 + projectStateExtraHeight;
-            graphics.DrawLine(separatorPen, rowX, currentY, rowX + rowWidth, currentY);
+
+            graphics.DrawLine(unfilledProgressPen, rowX, currentY, rowX + rowWidth, currentY);
+            graphics.DrawLine(filledProgressPen, rowX, currentY, rowX + projectPerEstimated * rowWidth, currentY);
 
 
             currentY += 30;
             DrawSummaryRow("Documentación", "adicional", $"{FormatMoney(additionalDocsCost)} €", rowX, currentY, rowWidth);
             currentY += 15;
-            graphics.DrawLine(separatorPen, rowX, currentY, rowX + rowWidth, currentY);
+            graphics.DrawLine(unfilledProgressPen, rowX, currentY, rowX + rowWidth, currentY);
+            graphics.DrawLine(filledProgressPen, rowX, currentY, rowX + additionalPerEstimated * rowWidth, currentY);
 
             currentY += 20;
             graphics.DrawLine(new XPen(BorderColor, 1), rowX, currentY, rowX + rowWidth, currentY);

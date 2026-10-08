@@ -1,4 +1,6 @@
-﻿namespace API_Backend_App_Honorarios.ExpressionInterpreting
+﻿using System.Globalization;
+
+namespace API_Backend_App_Honorarios.ExpressionInterpreting
 {
     public class Lexer
     {
@@ -68,7 +70,7 @@
 
             double value;
 
-            if (!double.TryParse(expression[tokenStartIdx..(idx + 1)], out value))
+            if (!double.TryParse(expression[tokenStartIdx..(idx + 1)], CultureInfo.InvariantCulture,  out value))
                 return new ExpressionToken(ExpressionTokenType.ERROR, expression[tokenStartIdx..(idx + 1)]);
 
             return new ExpressionToken(ExpressionTokenType.NUMBER, expression[tokenStartIdx..(idx + 1)], value);

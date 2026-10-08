@@ -1,6 +1,5 @@
 ﻿using API_Backend_App_Honorarios.Models;
 using API_Backend_App_Honorarios.Persistence;
-using System.Threading.Tasks;
 
 namespace API_Backend_App_Honorarios.ExpressionInterpreting
 {
@@ -15,7 +14,7 @@ namespace API_Backend_App_Honorarios.ExpressionInterpreting
 
         private readonly HonorariosDb honorariosDb;
 
-        private CalculationMode calcMode = CalculationMode.ObraCivil;
+        private CalculationMode calcMode = CalculationMode.EDIFICACION;
 
         public Interpreter(HonorariosDb db)
         {
@@ -55,7 +54,7 @@ namespace API_Backend_App_Honorarios.ExpressionInterpreting
         {
             switch (this.calcMode)
             {
-                case CalculationMode.ObraCivil:
+                case CalculationMode.EDIFICACION:
                     return await GetEdificacionValue(variableName);
                 case CalculationMode.OBRA_CIVIL:
                     return await GetObraCivilValue(variableName);
@@ -64,6 +63,23 @@ namespace API_Backend_App_Honorarios.ExpressionInterpreting
             }
 
             return 0;
+        }
+
+        public async Task<double> GetValue(string variableName, bool rounded)
+        {
+            double result = await this.GetValue(variableName);
+
+            result = rounded ? RoundValue(result) : result;
+
+            return result;
+        }
+
+        private double RoundValue(double value)
+        {
+            double rounded;
+
+            rounded = Math.Ceiling(value / 100) * 100;
+            return rounded;
         }
 
         public async Task<double> GetEdificacionValue(string variableName)
