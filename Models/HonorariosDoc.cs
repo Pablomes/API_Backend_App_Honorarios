@@ -544,6 +544,7 @@ namespace API_Backend_App_Honorarios.Pdf
             double currentY = startY;
             double rowHeight = 20;
             double headerRowHeight = rowHeight;
+            List<double> totals = new();
 
             graphics.DrawString("2. CONTENIDO DEL SERVICIO", SectionFont, new XSolidBrush(TextColor), new XPoint(margin, currentY));
 
@@ -605,6 +606,7 @@ namespace API_Backend_App_Honorarios.Pdf
                         }
 
                         DrawHeaderLines(lines.ToArray(), useIdx++, currentY, headerRowHeight);
+                        totals.Add(0);
                     }
                     break;
                 case "OBCI":
@@ -619,6 +621,7 @@ namespace API_Backend_App_Honorarios.Pdf
                         }
 
                         DrawHeaderLines(lines.ToArray(), useIdx++, currentY, headerRowHeight);
+                        totals.Add(0);
                     }
                     break;
                 case "URBA":
@@ -633,6 +636,7 @@ namespace API_Backend_App_Honorarios.Pdf
                         }
 
                         DrawHeaderLines(lines.ToArray(), useIdx++, currentY, headerRowHeight);
+                        totals.Add(0);
                     }
                     break;
             }
@@ -686,6 +690,7 @@ namespace API_Backend_App_Honorarios.Pdf
             foreach (double value in this.response.ProjectCosts)
             {
                 projectTotal += value;
+                totals[projectIdx - 1] += value;
                 DrawCellText($"{FormatMoney(value)} €", projectIdx, currentY, projectRowHeight);
                 projectIdx++;
             }
@@ -741,6 +746,7 @@ namespace API_Backend_App_Honorarios.Pdf
                     foreach (double value in addon.Values)
                     {
                         total += value;
+                        totals[idx - 1] += value;
                         DrawCellText($"{FormatMoney(value)} €", idx, currentY, thisRowHeight);
                         idx++;
                     }
@@ -757,6 +763,22 @@ namespace API_Backend_App_Honorarios.Pdf
                 graphics.DrawString("No hay documentos o actividades.", CellFont, new XSolidBrush(XColors.Gray), new XRect(margin + 5, currentY, tableWidth, rowHeight), XStringFormats.CenterLeft);
                 currentY += rowHeight;
             }
+
+            //
+            XRect totalRect = new XRect(margin, currentY, tableWidth, rowHeight);
+            graphics.DrawRectangle(new XPen(BorderColor, 1), totalRect);
+            DrawHeaderLines(new[] { "Total" }, 0, currentY, rowHeight, false);
+            double grandTotal = 0;
+            for (int i = 0; i < totals.Count; i++)
+            {
+                DrawCellText($"{FormatMoney(totals[i])} €", i + 1, currentY, rowHeight);
+                grandTotal += totals[i];
+            }
+
+            DrawHeaderLines(new[] { $"{FormatMoney(grandTotal)} €" }, 5, currentY, rowHeight);
+
+            currentY += rowHeight;
+            
 
             return currentY;
         }

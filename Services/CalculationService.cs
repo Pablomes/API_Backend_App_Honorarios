@@ -144,7 +144,7 @@ namespace API_Backend_App_Honorarios.Services
                     continue;
                 }
 
-                double PEM = use.TotalPEM ?? (double)(use.UnitPEM * use.Area);
+                double PEM = use.TotalPEM ?? (double)(use.UnitPEM ?? 0 * use.Area ?? 0); // AQUI FALLA ALGO
 
                 int limit = this.PEMRPresupuestos.Where(x => x <= PEM).Cast<int?>().Max() ?? 0;
 
