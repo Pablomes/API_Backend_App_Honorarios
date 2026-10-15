@@ -66,7 +66,7 @@ namespace API_Backend_App_Honorarios.Controllers
 
             ProyectoHonorario proyectoRegistrado = await _projectPersistence.RegisterProjectAsync(request.ProjectType, request.ActuationId);
 
-            HonorariosDocVertical documento = new HonorariosDocVertical(request, response, proyectoRegistrado.CVE, proyectoRegistrado.FechaHoraCreacion, fetchService);
+            HonorariosDoc documento = new HonorariosDoc(request, response, proyectoRegistrado.CVE, proyectoRegistrado.FechaHoraCreacion, fetchService);
             PdfDocument? doc = await documento.GeneratePdf();
 
             if (doc == null) return Problem("Error al generar PDF");

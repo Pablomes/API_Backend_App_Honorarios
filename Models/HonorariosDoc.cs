@@ -1,4 +1,5 @@
 ﻿using API_Backend_App_Honorarios.Models;
+using API_Backend_App_Honorarios.Persistence;
 using API_Backend_App_Honorarios.Services;
 using API_Backend_App_Industrializacion.Models;
 using Microsoft.AspNetCore.Identity;
@@ -33,11 +34,16 @@ namespace API_Backend_App_Honorarios.Pdf
 
         public static readonly CultureInfo esES = CultureInfo.GetCultureInfo("es-ES");
 
-        double[] usesTableLeftCoef = { 0, 0.32, 0.45, 0.57, 0.69, 0.81 };
+        //double[] usesTableLeftCoef = { 0, 0.32, 0.45, 0.57, 0.69, 0.81 };
+        double[] usesTableLeftCoef = { 0, 0.3, 0.44, 0.58, 0.72, 0.86 };
+
+        private const double SummaryTotalMaxFontSize = 18;
+        private const double SummaryTotalMinFontSize = 6;
 
         private XGraphics graphics = null!;
+        private XTextFormatter textFormat = null;
         private PdfPage page = null!;
-        private double margin = 40;
+        private double margin = 30;
         private double tableWidth;
         private double rightBoxWidth = 180;
         private double gap = 25;
@@ -65,66 +71,92 @@ namespace API_Backend_App_Honorarios.Pdf
             PdfDocument doc = new PdfDocument();
             page = doc.AddPage();
             page.Size = PdfSharp.PageSize.A4;
-            page.Orientation = PdfSharp.PageOrientation.Landscape;
+            page.Orientation = PdfSharp.PageOrientation.Portrait;
             graphics = XGraphics.FromPdfPage(page);
+            textFormat = new XTextFormatter(graphics);
 
-            tableWidth = page.Width.Point - (margin * 2) - rightBoxWidth - gap;
+            tableWidth = page.Width.Point - (margin * 2);// - rightBoxWidth - gap;
 
-            DrawMainHeader();
-            DrawActuationDataSection();
+            double nextY = DrawMainHeader();
+            nextY = DrawActuationDataSection(nextY + 10);
 
-            double nextY = DrawUsesTable(150);
+            nextY = DrawUsesTable(nextY + 20);
 
-            await DrawServiceContentSection(nextY + 30);
+            nextY = await DrawServiceContentSection(nextY + 30);
 
-            double rightBoxStartX = margin + tableWidth + gap;
-            await DrawSummaryBox(rightBoxStartX, 100, rightBoxWidth);
+            await DrawSummaryBox(nextY + 20);
 
             DrawFooter();
 
             return doc;
         }
 
-        private void DrawMainHeader()
+        private double DrawMainHeader()
         {
             double currentY = margin;
 
-            graphics.DrawString("Estimación del coste de la prestación de servicios de arquitectura e ingeniería", TitleFont, new XSolidBrush(TextColor), new XPoint(margin, currentY));
+            XStringFormat titleFormat = new XStringFormat();
+            titleFormat.LineAlignment = XLineAlignment.Near;
+            titleFormat.Alignment = XStringAlignment.Near;
+            textFormat.DrawString("Estimación del coste de la prestación de servicios de arquitectura e ingeniería", TitleFont, new XSolidBrush(TextColor), new XRect(new XPoint(margin, currentY), new XPoint(page.Width.Point - margin, currentY + 2 * TitleFont.Height)), titleFormat);
 
-            currentY += 30;
+            currentY += 20 + TitleFont.Height * 2;
 
-            string tabText = request.ProjectType switch
-            {
-                "EDIF" => "EDIFICACIÓN",
-                "URBA" => "URBANIZACIÓN",
-                "OBCI" => "OBRA CIVIL",
-                _ => "PROYECTO"
-            };
-
-            graphics.DrawString(tabText, TabFont, new XSolidBrush(TextColor), new XPoint(margin, currentY));
-            var textSize = graphics.MeasureString(tabText, TabFont);
-            graphics.DrawLine(new XPen(PrimaryColor, 2), margin, currentY + 5, margin + textSize.Width, currentY + 5);
+            return currentY;
         }
 
-        private void DrawActuationDataSection()
+        private double DrawActuationDataSection(double currentY)
         {
-            double currentY = 110;
             double labelWidth = 120;
+            double padding = 5;
+            double lineHeight = 11;
+            const int maxLines = 2;
 
             graphics.DrawString("1. DATOS DE LA", SectionFont, new XSolidBrush(TextColor), new XPoint(margin, currentY));
             graphics.DrawString("ACTUACIÓN", SectionFont, new XSolidBrush(TextColor), new XPoint(margin, currentY + 12));
 
-            XRect actuationRect = new XRect(margin + labelWidth, currentY - 10, tableWidth - labelWidth, 35);
+            bool isEmpty = string.IsNullOrEmpty(request.ActuationId);
+            string actuationText = isEmpty ? "Promotor e identificación de la actuación" : request.ActuationId;
+            XBrush textBrush = isEmpty ? new XSolidBrush(XColors.LightGray) : new XSolidBrush(TextColor);
 
+            double boxWidth = tableWidth - labelWidth;
+            double textWidth = boxWidth - padding * 2;
+
+            List<string> lines = new List<string>();
+            foreach (string paragraph in actuationText.Replace("\r", "").Split('\n'))
+            {
+                List<string> paragraphLines = SplitTextToFitWidth(paragraph, RegularFont, textWidth, graphics);
+                if (paragraphLines.Count == 0) paragraphLines.Add("");
+                lines.AddRange(paragraphLines);
+            }
+
+            if (lines.Count > maxLines)
+            {
+                string last = lines[maxLines - 1].TrimEnd('-');
+
+                while (last.Length > 0 && graphics.MeasureString(last + "…", RegularFont).Width > textWidth)
+                    last = last.Substring(0, last.Length - 1);
+
+                lines[maxLines - 1] = last + "…";
+                lines = lines.GetRange(0, maxLines);
+            }
+
+            double boxHeight = maxLines * lineHeight + padding * 2;
+
+            XRect actuationRect = new XRect(margin + labelWidth, currentY - 10, boxWidth, boxHeight);
             graphics.DrawRectangle(new XPen(SecondaryBg, 1), actuationRect);
 
-            XTextFormatter tf = new XTextFormatter(graphics);
-            XRect textRect = new XRect(actuationRect.X + 5, actuationRect.Y + 5, actuationRect.Width - 10, actuationRect.Height - 10);
+            for (int i = 0; i < lines.Count; i++)
+            {
+                graphics.DrawString(
+                    lines[i],
+                    RegularFont,
+                    textBrush,
+                    new XPoint(actuationRect.X + padding, actuationRect.Y + padding + i * lineHeight),
+                    XStringFormats.TopLeft);
+            }
 
-            string actuationText = string.IsNullOrEmpty(request.ActuationId) ? "Promotor e identificación de la actuación" : request.ActuationId;
-            XBrush textBrush = string.IsNullOrEmpty(request.ActuationId) ? new XSolidBrush(XColors.LightGray) : new XSolidBrush(TextColor);
-
-            tf.DrawString(actuationText, RegularFont, textBrush, textRect, XStringFormats.TopLeft);
+            return actuationRect.Bottom - 10;
         }
 
         private double DrawUsesTable(double startY)
@@ -145,6 +177,7 @@ namespace API_Backend_App_Honorarios.Pdf
 
 
             double ColX(int index) => margin + 5 + (tableWidth * usesTableLeftCoef[index]);
+            double ColWidth(int index) => (((index < usesTableLeftCoef.Length - 1) ? usesTableLeftCoef[index + 1] : 1) - usesTableLeftCoef[index]) * tableWidth;
 
             switch (request.ProjectType)
             {
@@ -194,27 +227,46 @@ namespace API_Backend_App_Honorarios.Pdf
                         {
                             useCount++;
 
+                            string installPEM = use.InstallationPEM == null ? "" : $"{((double)use.InstallationPEM).ToString("N0", esES)} €";
+
+                            string name = use.Name == "" ? $"Uso {useIdx}" : use.Name;
+
+                            List<string> nameLines = SplitTextToFitWidth(name, CellFont, ColWidth(0), graphics);
+
+                            if (nameLines.Count > 2)
+                            {
+                                nameLines[1] = nameLines[1].TrimEnd('-') + "…";
+                                nameLines = nameLines[0..2];
+                            }
+
+                            double currRowHeight = rowHeight + (nameLines.Count - 1) * 8;
+
+                            XRect rowRect = new XRect(margin, currentY, tableWidth, currRowHeight);
+                            graphics.DrawRectangle(new XPen(BorderColor, 1), rowRect);
+
+                            DrawCellText(useCount.ToString(), 0, currentY, currRowHeight, false, 0);
+
+                            DrawCellTextLines(nameLines, 0, currentY, currRowHeight, false, 20);
+
+
+
+                            DrawCellText($"{(use.RepeatedFloors ?? 0).ToString("N0", esES)}", 1, currentY, currRowHeight, true);
+                            DrawCellText($"{(use.Area ?? 0).ToString("N0", esES)} m²", 2, currentY, currRowHeight, true);
+                            DrawCellText($"{(use.UnitPEM ?? 0).ToString("N0", esES)} €/m²", 3, currentY, currRowHeight, true);
+                            DrawCellText(installPEM, 4, currentY, currRowHeight, true);
+                            DrawCellText($"{((use.Area * use.UnitPEM) ?? 0).ToString("N0", esES)} €", 5, currentY, currRowHeight, true);
+
+                            currentY += currRowHeight;
+                            useIdx++;
+                        }
+
+                        if (uses.Count == 0)
+                        {
                             XRect rowRect = new XRect(margin, currentY, tableWidth, rowHeight);
                             graphics.DrawRectangle(new XPen(BorderColor, 1), rowRect);
 
-                            string installPEM = use.InstallationPEM == null ? "" : $"{((double)use.InstallationPEM).ToString("N0", esES)} €";
-
-
-
-                            DrawCellText(useCount.ToString(), 0, currentY, rowHeight, false, 0);
-
-                            DrawCellText(use.Name == "" ? $"Uso {useIdx}" : use.Name, 0, currentY, rowHeight, false, 20);
-
-
-
-                            DrawCellText($"{(use.RepeatedFloors ?? 0).ToString("N0", esES)}", 1, currentY, rowHeight, true);
-                            DrawCellText($"{(use.Area ?? 0).ToString("N0", esES)} m²", 2, currentY, rowHeight, true);
-                            DrawCellText($"{(use.UnitPEM ?? 0).ToString("N0", esES)} €/m²", 3, currentY, rowHeight, true);
-                            DrawCellText(installPEM, 4, currentY, rowHeight, true);
-                            DrawCellText($"{((use.Area * use.UnitPEM) ?? 0).ToString("N0", esES)} €", 5, currentY, rowHeight, true);
-
+                            graphics.DrawString("No hay usos de edificación disponibles.", CellFont, new XSolidBrush(XColors.Gray), new XRect(margin + 5, currentY, tableWidth, rowHeight), XStringFormats.CenterLeft);
                             currentY += rowHeight;
-                            useIdx++;
                         }
 
                         break;
@@ -263,26 +315,47 @@ namespace API_Backend_App_Honorarios.Pdf
                         {
                             useCount++;
 
-                            XRect rowRect = new XRect(margin, currentY, tableWidth, rowHeight);
+                            string name = use.Type == "" ? $"Uso {useIdx}" : use.Type;
+
+                            List<string> nameLines = SplitTextToFitWidth(name, CellFont, ColWidth(0), graphics);
+
+                            if (nameLines.Count > 2)
+                            {
+                                nameLines[1] = nameLines[1].TrimEnd('-') + "…";
+                                nameLines = nameLines[0..2];
+                            }
+
+                            double currRowHeight = rowHeight + (nameLines.Count - 1) * 8;
+
+                            XRect rowRect = new XRect(margin, currentY, tableWidth, currRowHeight);
                             graphics.DrawRectangle(new XPen(BorderColor, 1), rowRect);
 
 
 
-                            DrawCellText(useCount.ToString(), 0, currentY, rowHeight, false, 0);
+                            DrawCellText(useCount.ToString(), 0, currentY, currRowHeight, false, 0);
 
-                            DrawCellText(use.Type == "" ? $"Uso {useIdx}" : use.Type, 0, currentY, rowHeight, false, 20);
+                            DrawCellText(name, 0, currentY, currRowHeight, false, 20);
 
                             string measurement = use.Area == null ? "" : $"{((double)use.Area).ToString("N0", esES)} {areaSymbols[use.Type]}";
                             string unitPEM = use.UnitPEM == null ? "" : $"{((double)use.UnitPEM).ToString("N0", esES)} {unitPEMSymbols[use.Type]}";
 
 
-                            DrawCellText(measurement, 2, currentY, rowHeight, true);
-                            DrawCellText(unitPEM, 3, currentY, rowHeight, true);
+                            DrawCellText(measurement, 2, currentY, currRowHeight, true);
+                            DrawCellText(unitPEM, 3, currentY, currRowHeight, true);
 
-                            DrawCellText($"{(use.TotalPEM ?? 0).ToString("N0", esES)} €", 5, currentY, rowHeight, true);
+                            DrawCellText($"{(use.TotalPEM ?? 0).ToString("N0", esES)} €", 5, currentY, currRowHeight, true);
 
-                            currentY += rowHeight;
+                            currentY += currRowHeight;
                             useIdx++;
+                        }
+
+                        if (uses.Count == 0)
+                        {
+                            XRect rowRect = new XRect(margin, currentY, tableWidth, rowHeight);
+                            graphics.DrawRectangle(new XPen(BorderColor, 1), rowRect);
+
+                            graphics.DrawString("No hay usos de obra civil disponibles.", CellFont, new XSolidBrush(XColors.Gray), new XRect(margin + 5, currentY, tableWidth, rowHeight), XStringFormats.CenterLeft);
+                            currentY += rowHeight;
                         }
 
                         break;
@@ -298,24 +371,45 @@ namespace API_Backend_App_Honorarios.Pdf
                         {
                             useCount++;
 
-                            XRect rowRect = new XRect(margin, currentY, tableWidth, rowHeight);
+                            string name = use.Name == "" ? $"Uso {useIdx}" : use.Name;
+
+                            List<string> nameLines = SplitTextToFitWidth(name, CellFont, ColWidth(0), graphics);
+
+                            if (nameLines.Count > 2)
+                            {
+                                nameLines[1] = nameLines[1].TrimEnd('-') + "…";
+                                nameLines = nameLines[0..2];
+                            }
+
+                            double currRowHeight = rowHeight + (nameLines.Count - 1) * 8;
+
+                            XRect rowRect = new XRect(margin, currentY, tableWidth, currRowHeight);
                             graphics.DrawRectangle(new XPen(BorderColor, 1), rowRect);
 
 
 
-                            DrawCellText(useCount.ToString(), 0, currentY, rowHeight, false, 0);
+                            DrawCellText(useCount.ToString(), 0, currentY, currRowHeight, false, 0);
 
-                            DrawCellText(use.Name == "" ? $"Uso {useIdx}" : use.Name, 0, currentY, rowHeight, false, 20);
+                            DrawCellText(name, 0, currentY, currRowHeight, false, 20);
 
 
-                            DrawCellText($"{(use.GreenArea ?? 0).ToString("N0", esES)} m²", 1, currentY, rowHeight, true);
-                            DrawCellText($"{(use.NetworkArea ?? 0).ToString("N0", esES)} m²", 2, currentY, rowHeight, true);
-                            DrawCellText($"{(use.UnitPEMGreenArea ?? 0).ToString("N0", esES)} €/m²", 3, currentY, rowHeight, true);
-                            DrawCellText($"{(use.UnitPEMNetworkArea ?? 0).ToString("N0", esES)} €/m²", 4, currentY, rowHeight, true);
-                            DrawCellText($"{((use.GreenArea * use.UnitPEMGreenArea + use.NetworkArea * use.UnitPEMNetworkArea) ?? 0).ToString("N0", esES)} €", 5, currentY, rowHeight, true);
+                            DrawCellText($"{(use.GreenArea ?? 0).ToString("N0", esES)} m²", 1, currentY, currRowHeight, true);
+                            DrawCellText($"{(use.NetworkArea ?? 0).ToString("N0", esES)} m²", 2, currentY, currRowHeight, true);
+                            DrawCellText($"{(use.UnitPEMGreenArea ?? 0).ToString("N0", esES)} €/m²", 3, currentY, currRowHeight, true);
+                            DrawCellText($"{(use.UnitPEMNetworkArea ?? 0).ToString("N0", esES)} €/m²", 4, currentY, currRowHeight, true);
+                            DrawCellText($"{((use.GreenArea * use.UnitPEMGreenArea + use.NetworkArea * use.UnitPEMNetworkArea) ?? 0).ToString("N0", esES)} €", 5, currentY, currRowHeight, true);
 
-                            currentY += rowHeight;
+                            currentY += currRowHeight;
                             useIdx++;
+                        }
+
+                        if (uses.Count == 0)
+                        {
+                            XRect rowRect = new XRect(margin, currentY, tableWidth, rowHeight);
+                            graphics.DrawRectangle(new XPen(BorderColor, 1), rowRect);
+
+                            graphics.DrawString("No hay usos de urbanización disponibles.", CellFont, new XSolidBrush(XColors.Gray), new XRect(margin + 5, currentY, tableWidth, rowHeight), XStringFormats.CenterLeft);
+                            currentY += rowHeight;
                         }
 
                         break;
@@ -403,54 +497,49 @@ namespace API_Backend_App_Honorarios.Pdf
 
         private List<string> SplitTextToFitWidth(string text, XFont font, double maxWidth, XGraphics gfx)
         {
-            if (string.IsNullOrEmpty(text))
-                return new List<string>();
+            var lines = new List<string>();
+            if (string.IsNullOrEmpty(text)) return lines;
 
+            double Measure(string s) => gfx.MeasureString(s, font).Width;
 
-            string[] words = text.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
-
-            List<string> lines = new List<string>();
             string currentLine = "";
 
-            foreach (string word in words)
+            foreach (string word in text.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries))
             {
-                if (string.IsNullOrEmpty(currentLine))
+                string candidate = currentLine.Length == 0 ? word : currentLine + " " + word;
+
+                if (Measure(candidate) <= maxWidth)
                 {
-                    currentLine = word;
+                    currentLine = candidate;
+                    continue;
                 }
-                else
+
+                if (currentLine.Length > 0)
                 {
-
-                    string testLine = currentLine + " " + word;
-
-
-                    double testWidth = gfx.MeasureString(testLine, font).Width;
-
-                    if (testWidth <= maxWidth)
-                    {
-
-                        currentLine = testLine;
-                    }
-                    else
-                    {
-
-                        lines.Add(currentLine);
-
-                        currentLine = word;
-                    }
+                    lines.Add(currentLine);
+                    currentLine = "";
                 }
+
+                string w = word;
+                while (Measure(w) > maxWidth)
+                {
+                    int len = w.Length - 1;
+                    while (len > 1 && Measure(w.Substring(0, len) + "-") > maxWidth)
+                        len--;
+
+                    lines.Add(w.Substring(0, len) + "-");
+                    w = w.Substring(len);
+                }
+                currentLine = w;
             }
 
-
-            if (!string.IsNullOrEmpty(currentLine))
-            {
+            if (currentLine.Length > 0)
                 lines.Add(currentLine);
-            }
 
             return lines;
         }
 
-        private async Task DrawServiceContentSection(double startY)
+        private async Task<double> DrawServiceContentSection(double startY)
         {
             double currentY = startY;
             double rowHeight = 20;
@@ -465,25 +554,27 @@ namespace API_Backend_App_Honorarios.Pdf
                 case "EDIF":
                     foreach (EdificationUse use in ((EdificationCalculationRequest)request.CalculationRequest).Uses)
                     {
-                        int numLines = SplitTextToFitWidth(use.Name, TableHeaderFont, 0.13 * tableWidth, graphics).Count;
+                        int numLines = SplitTextToFitWidth(use.Name, TableHeaderFont, 0.14 * tableWidth, graphics).Count;
                         maxLines = numLines > maxLines ? numLines : maxLines;
                     }
                     break;
                 case "OBCI":
                     foreach (CivilWorksUse use in ((CivilWorksCalculationRequest)request.CalculationRequest).Uses)
                     {
-                        int numLines = SplitTextToFitWidth(use.Type, TableHeaderFont, 0.13 * tableWidth, graphics).Count;
+                        int numLines = SplitTextToFitWidth(use.Type, TableHeaderFont, 0.14 * tableWidth, graphics).Count;
                         maxLines = numLines > maxLines ? numLines : maxLines;
                     }
                     break;
                 case "URBA":
                     foreach (UrbanisationUse use in ((UrbanisationCalculationRequest)request.CalculationRequest).Uses)
                     {
-                        int numLines = SplitTextToFitWidth(use.Name, TableHeaderFont, 0.13 * tableWidth, graphics).Count;
+                        int numLines = SplitTextToFitWidth(use.Name, TableHeaderFont, 0.14 * tableWidth, graphics).Count;
                         maxLines = numLines > maxLines ? numLines : maxLines;
                     }
                     break;
             }
+
+            if (maxLines > 2) maxLines = 2;
 
             headerRowHeight += (maxLines - 1) * 8;
 
@@ -494,6 +585,7 @@ namespace API_Backend_App_Honorarios.Pdf
             graphics.DrawRectangle(new XPen(BorderColor, 1), headerRect);
 
             double ColX(int index) => margin + 5 + (tableWidth * usesTableLeftCoef[index]);
+            double ColWidth(int index) => (((index < usesTableLeftCoef.Length - 1) ? usesTableLeftCoef[index + 1] : 1) - usesTableLeftCoef[index]) * tableWidth;
 
             DrawHeaderLines(new[] { "Documentos y actividades" }, 0, currentY, headerRowHeight, false);
 
@@ -504,24 +596,48 @@ namespace API_Backend_App_Honorarios.Pdf
                 case "EDIF":
                     foreach (EdificationUse use in ((EdificationCalculationRequest)request.CalculationRequest).Uses)
                     {
-                        DrawHeaderLines(SplitTextToFitWidth(use.Name == "" ? $"Uso {useIdx}" : use.Name, TableHeaderFont, 0.13 * tableWidth, graphics).ToArray(), useIdx++, currentY, headerRowHeight);
+                        List<string> lines = SplitTextToFitWidth(use.Name == "" ? $"Uso {useIdx}" : use.Name, TableHeaderFont, ColWidth(useIdx), graphics);
+
+                        if (lines.Count > 2)
+                        {
+                            lines[1] = lines[1].TrimEnd('-') + "…";
+                            lines = lines[0..2];
+                        }
+
+                        DrawHeaderLines(lines.ToArray(), useIdx++, currentY, headerRowHeight);
                     }
                     break;
                 case "OBCI":
                     foreach (CivilWorksUse use in ((CivilWorksCalculationRequest)request.CalculationRequest).Uses)
                     {
-                        DrawHeaderLines(SplitTextToFitWidth(use.Type == "" ? $"Uso {useIdx}" : use.Type, TableHeaderFont, 0.13 * tableWidth, graphics).ToArray(), useIdx++, currentY, headerRowHeight);
+                        List<string> lines = SplitTextToFitWidth(use.Type == "" ? $"Uso {useIdx}" : use.Type, TableHeaderFont, ColWidth(useIdx), graphics);
+
+                        if (lines.Count > 2)
+                        {
+                            lines[1] = lines[1].TrimEnd('-') + "…";
+                            lines = lines[0..2];
+                        }
+
+                        DrawHeaderLines(lines.ToArray(), useIdx++, currentY, headerRowHeight);
                     }
                     break;
                 case "URBA":
                     foreach (UrbanisationUse use in ((UrbanisationCalculationRequest)request.CalculationRequest).Uses)
                     {
-                        DrawHeaderLines(SplitTextToFitWidth(use.Name == "" ? $"Uso {useIdx}" : use.Name, TableHeaderFont, 0.13 * tableWidth, graphics).ToArray(), useIdx++, currentY, headerRowHeight);
+                        List<string> lines = SplitTextToFitWidth(use.Name == "" ? $"Uso {useIdx}" : use.Name, TableHeaderFont, ColWidth(useIdx), graphics);
+
+                        if (lines.Count > 2)
+                        {
+                            lines[1] = lines[1].TrimEnd('-') + "…";
+                            lines = lines[0..2];
+                        }
+
+                        DrawHeaderLines(lines.ToArray(), useIdx++, currentY, headerRowHeight);
                     }
                     break;
             }
 
-            DrawHeaderLines(new[] { "PEM Uso €" }, 5, currentY, headerRowHeight, true);
+            DrawHeaderLines(new[] { "Coste €" }, 5, currentY, headerRowHeight, true);
 
             currentY += headerRowHeight;
 
@@ -638,8 +754,11 @@ namespace API_Backend_App_Honorarios.Pdf
             {
                 XRect rowRect = new XRect(margin, currentY, tableWidth, rowHeight);
                 graphics.DrawRectangle(new XPen(BorderColor, 1), rowRect);
-                graphics.DrawString("No hay documentos o actividades.", CellFont, new XSolidBrush(XColors.Gray), new XPoint(ColX(0), currentY + 15));
+                graphics.DrawString("No hay documentos o actividades.", CellFont, new XSolidBrush(XColors.Gray), new XRect(margin + 5, currentY, tableWidth, rowHeight), XStringFormats.CenterLeft);
+                currentY += rowHeight;
             }
+
+            return currentY;
         }
 
         private double CalcProjectCost()
@@ -698,9 +817,11 @@ namespace API_Backend_App_Honorarios.Pdf
             return total;
         }
 
-        private async Task DrawSummaryBox(double startX, double startY, double width)
+        private async Task DrawSummaryBox(double startY)
         {
             double currentY = startY;
+            double startX = margin;
+            double width = this.tableWidth;
 
             double projectCost = CalcProjectCost();
             double additionalDocsCost = CalcAdditionalDocsCost();
@@ -711,7 +832,10 @@ namespace API_Backend_App_Honorarios.Pdf
             double costPerPEMPercentage = totalPEM == 0 ? 0 : (estimatedCost / totalPEM) * 100;
 
             double innerMargin = 15;
-            double rowWidth = width - (innerMargin * 2);
+            double totalWidthPercentage = 0.25;
+            double progressBarsPercentage = 0.5;
+            double extraInfoPercentage = 1 - totalWidthPercentage - progressBarsPercentage;
+            double rowWidth = progressBarsPercentage * width - innerMargin;
 
             string projectState = "";
             switch (this.request.ProjectType)
@@ -745,48 +869,62 @@ namespace API_Backend_App_Honorarios.Pdf
             List<string> projectStateLines = WrapSummaryLabel(projectStateLabel, projectCostValue, rowWidth);
             double projectStateExtraHeight = (projectStateLines.Count - 1) * SummaryRowLineHeight;
 
-            XRect headerRect = new XRect(startX, currentY, width, 55);
+            XRect headerRect = new XRect(startX, currentY, width * totalWidthPercentage, innerMargin * 2 + 35 + projectStateExtraHeight);
             graphics.DrawRectangle(new XSolidBrush(PrimaryColor), headerRect);
 
-            XRect backgroundRect = new XRect(startX, startY + 55, width, 165 + projectStateExtraHeight);
-
+            // RECUADRO GRISACEO
+            XRect backgroundRect = new XRect(startX + width * totalWidthPercentage, startY, width * (1 - totalWidthPercentage), innerMargin * 2 + 35 + projectStateExtraHeight);
             graphics.DrawRectangle(new XSolidBrush(BackgroundColor), backgroundRect);
 
             graphics.DrawString("COSTE ESTIMADO:", TableHeaderFont, new XSolidBrush(XColors.White), new XPoint(startX + 15, currentY + 20));
 
             string totalValue = $"{FormatMoney(estimatedCost)} €";
-            var totalValueSize = graphics.MeasureString(totalValue, SummaryTotalFont);
-            graphics.DrawString(totalValue, SummaryTotalFont, new XSolidBrush(XColors.White), new XPoint(startX + width - 15 - totalValueSize.Width, currentY + 40));
 
-            currentY += 55;
+            double totalBoxWidth = width * totalWidthPercentage;
+            double availableTotalWidth = totalBoxWidth - innerMargin * 2;
 
-            double rowX = startX + innerMargin;
-            XPen unfilledProgressPen = new XPen(BorderColor, 4);
-            XPen filledProgressPen = new XPen(PrimaryColor, 4);
+            XFont totalFont = GetFittingFont(totalValue, availableTotalWidth, SummaryTotalMaxFontSize, SummaryTotalMinFontSize);
+            double baselineOffset = (SummaryTotalFont.Size - totalFont.Size) / 2;
 
-            currentY += 25;
+            graphics.DrawString(
+                totalValue,
+                totalFont,
+                new XSolidBrush(XColors.White),
+                new XPoint(startX + innerMargin, currentY + 40 - baselineOffset));
+
+            double rowX = startX + width * totalWidthPercentage + innerMargin / 2;
+            XPen unfilledProgressPen = new XPen(BorderColor, 3);
+            XPen filledProgressPen = new XPen(PrimaryColor, 3);
+
+            currentY += innerMargin;
             DrawSummaryRow(projectStateLabel, projectCostValue, rowX, currentY, rowWidth);
-            currentY += 15 + projectStateExtraHeight;
+            currentY += 10 + projectStateExtraHeight;
 
             graphics.DrawLine(unfilledProgressPen, rowX, currentY, rowX + rowWidth, currentY);
             graphics.DrawLine(filledProgressPen, rowX, currentY, rowX + projectPerEstimated * rowWidth, currentY);
 
 
-            currentY += 30;
-            DrawSummaryRow("Documentación", "adicional", $"{FormatMoney(additionalDocsCost)} €", rowX, currentY, rowWidth);
-            currentY += 15;
+            currentY += 20;
+            DrawSummaryRow("Documentación adicional", $"{FormatMoney(additionalDocsCost)} €", rowX, currentY, rowWidth);
+            currentY += 10;
             graphics.DrawLine(unfilledProgressPen, rowX, currentY, rowX + rowWidth, currentY);
             graphics.DrawLine(filledProgressPen, rowX, currentY, rowX + additionalPerEstimated * rowWidth, currentY);
 
-            currentY += 20;
-            graphics.DrawLine(new XPen(BorderColor, 1), rowX, currentY, rowX + rowWidth, currentY);
+
+            // LINEA VERTICAL DE SEPARACION
+            graphics.DrawLine(new XPen(PrimaryColor, 1), startX + width * (1 - extraInfoPercentage), startY + 5, startX + width * (1 - extraInfoPercentage), startY + 45 + innerMargin + projectStateExtraHeight);
 
 
-            currentY += 20;
-            DrawSummaryRow("PEM Total", $"{FormatMoney(totalPEM)} €", rowX, currentY, rowWidth);
+            currentY = startY + innerMargin;
+            rowX = rowX + width * progressBarsPercentage;
+            double extraInfoWidth = width * extraInfoPercentage - innerMargin;
+            DrawSummaryRow("PEM Total", "", rowX, currentY, extraInfoWidth);
+            DrawSummaryRow("", $"{FormatMoney(totalPEM)} €", rowX, currentY + 12, extraInfoWidth);
 
-            currentY += 25;
-            DrawSummaryRow("Coste/PEM", $"{costPerPEMPercentage.ToString("N1", HonorariosDoc.esES).TrimEnd('0').TrimEnd(HonorariosDoc.esES.NumberFormat.NumberDecimalSeparator[0])} %", rowX, currentY, rowWidth);
+            currentY += 35;
+            DrawSummaryRow("Coste/PEM", "", rowX, currentY, extraInfoWidth);
+            DrawSummaryRow("", $"{costPerPEMPercentage.ToString("N1", HonorariosDoc.esES).TrimEnd('0').TrimEnd(HonorariosDoc.esES.NumberFormat.NumberDecimalSeparator[0])} %", rowX, currentY + 12, extraInfoWidth);
+
             currentY += 15;
 
 
@@ -827,6 +965,20 @@ namespace API_Backend_App_Honorarios.Pdf
             var valueSize = graphics.MeasureString(value, SummaryValueFont);
             graphics.DrawString(value, SummaryValueFont, new XSolidBrush(TextColor), new XPoint(x + width - valueSize.Width, y));
             return 0;
+        }
+
+        private XFont GetFittingFont(string text, double maxWidth, double maxSize, double minSize, XFontStyleEx style = XFontStyleEx.Bold)
+        {
+            double size = maxSize;
+            XFont font = new XFont("Montserrat", size, style);
+
+            while (size > minSize && graphics.MeasureString(text, font).Width > maxWidth)
+            {
+                size -= 0.5;
+                font = new XFont("Montserrat", size, style);
+            }
+
+            return font;
         }
 
         private void DrawFooter()

@@ -234,7 +234,7 @@ namespace API_Backend_App_Honorarios.Services
 
                 double PEM = (double)(use.GreenArea * use.UnitPEMGreenArea + use.NetworkArea * use.UnitPEMNetworkArea);
 
-                double SUP = (double)(use.GreenArea + 2 * use.NetworkArea);
+                double SUP = (double)((use.UnitPEMGreenArea == 0 ? 0 : use.GreenArea) + 2 * (use.UnitPEMNetworkArea == 0 ? 0 : use.NetworkArea));
 
                 interpreter.ClearVariables();
                 interpreter.AddVariables(("PEM", PEM), ("SUP", SUP), ("SUPV", (double)use.GreenArea), ("SUPN", (double)use.NetworkArea));
