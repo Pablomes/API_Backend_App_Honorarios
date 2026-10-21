@@ -26,14 +26,13 @@ namespace API_Backend_App_Honorarios.Services
         {
             string code = "";
 
-            while (await checkProjectExists(code = $"NI{this._base58.randomCode(19)}")) { }
+            while (await checkProjectExists(code = $"HO{this._base58.randomCode(19)}")) { }
 
             return code;
         }
 
         public async Task<ProyectoHonorario> RegisterProjectAsync(string projectType, string actuationId)
         {
-            // Asume que la implementación Base58 tiene un método para generar el UUID
             string newUuid = await generateRandomCVECode();
 
             var project = new ProyectoHonorario()

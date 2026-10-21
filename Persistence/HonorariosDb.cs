@@ -13,6 +13,8 @@ namespace API_Backend_App_Honorarios.Persistence
             _schema = settings.Value.Schema ?? "Data";
         }
 
+        // SE CREAN TODOS LOS DBSETS CORRESPONDIENTES A LAS TABLAS
+
         public DbSet<EdificacionCalcData> EdificacionCalcDatas => Set<EdificacionCalcData>();
         public DbSet<EdificacionPlantasCalcData> EdificacionPlantasCalcDatas => Set<EdificacionPlantasCalcData>();
         public DbSet<EdificacionDocs> EdificacionDocs => Set<EdificacionDocs>();

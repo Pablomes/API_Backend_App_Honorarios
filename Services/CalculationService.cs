@@ -27,6 +27,9 @@ namespace API_Backend_App_Honorarios.Services
             this.interpreter = new Interpreter(this.honorariosDb);
         }
 
+        // TODOS LOS MÉTODOS CalculateAsync() UTILIZAN EL INTERPRETE PARA CALCULAR EL RESULTADO.
+        // TODO LO ANTERIOR A ESA LLAMADA ES MONTAJE PARA PERMITIR EL FUNCIONAMIENTO DEL INTERPRETE
+
         public async Task<HonorariosCalculationResponse> CalculateAsync(HonorariosCalculationRequest request, bool round = false)
         {
             switch (request)

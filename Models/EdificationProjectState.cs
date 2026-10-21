@@ -13,6 +13,9 @@ namespace API_Backend_App_Honorarios.Models
         DIOB,
         PBED,
         ATSU,
-        ACPR
+        ACPR,
+        DIFA,
+        DEJO,
+        PEJD
     }
 }

@@ -60,8 +60,6 @@ namespace API_Backend_App_Honorarios.Controllers
             }
         }
 
-        [HttpGet("")]
-
 
         [HttpPost("calculate")]
         public async Task<ActionResult<HonorariosCalculationResponse>> calculateValues([FromBody] HonorariosCalculationRequest request)

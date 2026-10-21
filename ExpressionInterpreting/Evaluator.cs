@@ -40,7 +40,7 @@ namespace API_Backend_App_Honorarios.ExpressionInterpreting
                 case ExpressionNodeType.POWER:
                     if (node.Left == null || node.Right == null) throw new InvalidOperationException("POWER node requires left and right children.");
                     double num = await Evaluate(node.Left);
-                    if (num == 0) return 0;
+                    if (num == 0) return 0;  // CONSIDERAMOS QUE 0^x = 0, para todo x
                     res = Math.Pow(num, await Evaluate(node.Right));
                     break;
                 case ExpressionNodeType.GROUP:

@@ -62,10 +62,13 @@ namespace API_Backend_App_Honorarios.Controllers
         {
             _logger.LogInformation("Iniciando generación de PDF de Honorarios");
 
+            // RECOPILACION DE DATOS
             HonorariosCalculationResponse response = await calculationService.CalculateAsync(request.CalculationRequest, true);
 
+            // REGISTRO DE PROYECTO
             ProyectoHonorario proyectoRegistrado = await _projectPersistence.RegisterProjectAsync(request.ProjectType, request.ActuationId);
 
+            // GENERACION DOCUMENTO
             HonorariosDoc documento = new HonorariosDoc(request, response, proyectoRegistrado.CVE, proyectoRegistrado.FechaHoraCreacion, fetchService);
             PdfDocument? doc = await documento.GeneratePdf();
 
@@ -103,6 +106,8 @@ namespace API_Backend_App_Honorarios.Controllers
         [HttpGet("{cve}")]
         public async Task<IActionResult> GetExistingProject(string cve)
         {
+            // PERMITE RECUPERAR PROYECTOS EXISTENTES, ACTUALMENTE NO UTILIZADO EN LA APP
+
             if (!(await this._projectPersistence.checkProjectExists(cve)))
             {
                 _logger.LogWarning($"Project {cve} not found in database.");
